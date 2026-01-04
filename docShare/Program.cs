@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using API.Services;
 namespace API
 {
     public class Program
@@ -13,6 +14,16 @@ namespace API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddCors(option =>
+            {
+                option.AddPolicy("CORS", options =>
+                {
+                    options
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+                });
+            });
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddDbContext<DocShareSimpleDbContext>(options =>
@@ -48,6 +59,7 @@ namespace API
             builder.Services.AddScoped<IUsers,Users_Repo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddScoped<IGoogleAuthService,GoogleAuthService>();
 
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())
@@ -55,6 +67,7 @@ namespace API
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
+            app.UseCors("CORS");
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();

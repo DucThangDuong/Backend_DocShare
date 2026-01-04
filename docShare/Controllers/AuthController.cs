@@ -6,7 +6,9 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client.Extensibility;
+using System.Security.Claims;
 
 namespace API.Controllers
 {
@@ -16,10 +18,12 @@ namespace API.Controllers
     {
         private readonly IUnitOfWork _repo;
         private readonly IJwtTokenService _generateJwtToken;
-        public AuthController(IUnitOfWork repo , IJwtTokenService jwttoken)
+        private readonly IGoogleAuthService _authService;
+        public AuthController(IUnitOfWork repo , IJwtTokenService jwttoken, IGoogleAuthService authService)
         {
             _repo = repo;
             _generateJwtToken = jwttoken;
+            _authService = authService;
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTo userlogin)
@@ -33,7 +37,7 @@ namespace API.Controllers
             {
                 return Unauthorized(new { message = "Tài khoản hoặc mật khẩu không chính xác." });
             }
-            string role = userEntity.Role ?? "Độc giả";
+            string role = userEntity.Role ?? "User";
             var accessToken = _generateJwtToken.GenerateAccessToken(userEntity.Id, userEntity.Email!, role);
             var refreshToken = _generateJwtToken.GenerateRefreshToken();
 
@@ -77,7 +81,7 @@ namespace API.Controllers
             bool isEmailExists = await _repo.usersRepo.ExistEmailAsync(request.Email);
             if (isEmailExists)
             {
-                return BadRequest(new { message = "Email này đã được sử dụng." });
+                return Conflict (new { message = "Email này đã tồn tại" });
             }
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
             var newUser = new User
@@ -87,7 +91,8 @@ namespace API.Controllers
                 Username = request.Username,
                 FullName = request.Username,
                 CreatedAt = DateTime.Now,
-                Role = "Độc giả"
+                Role = "User",
+                IsActivate=1
             };
             bool result=await _repo.usersRepo.CreateUserAsync(newUser);
             if (!result)
@@ -98,6 +103,57 @@ namespace API.Controllers
                 });
             }
             return Created();
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+
+                var user = await _repo.usersRepo.GetUserAsync(int.Parse(userId));
+
+                if (user == null) return NotFound();
+                return Ok(new
+                {
+                    id = user.Id,
+                    username = user.FullName,
+                    email = user.Email,
+                    avatar = user.AvartarUrl
+                });
+            }
+            return BadRequest();
+        }
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDTO model)
+        {
+            if (string.IsNullOrEmpty(model.IdToken))
+            {
+                return BadRequest(new { message = "ID Token is required." });
+            }
+
+            try
+            {
+                var result = await _authService.HandleGoogleLoginAsync(model.IdToken);
+
+                if (result.IsSuccess)
+                {
+                    return Ok(new
+                    {
+                        accesstoken = result.CustomJwtToken
+                    });
+                }
+                else
+                {
+                    return Unauthorized(new { message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An unexpected error occurred." });
+            }
         }
     }
 }

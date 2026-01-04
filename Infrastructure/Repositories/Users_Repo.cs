@@ -42,6 +42,11 @@ namespace Infrastructure.Repositories
             return await _context.Users.FirstOrDefaultAsync(e => e.Email == email);
         }
 
+        public async Task<User?> GetUserAsync(int id)
+        {
+            return await _context.Users.FirstOrDefaultAsync(e => e.Id == id);
+        }
+
         public async Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiryDate)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id ==userId );

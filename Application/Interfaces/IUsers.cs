@@ -13,5 +13,6 @@ namespace Application.Interfaces
         public Task<bool> CreateUserAsync(User user);
         public Task<User?> GetByEmailAsync(string email);
         public Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiryDate);
+        public Task<User?> GetUserAsync(int id);
     }
 }

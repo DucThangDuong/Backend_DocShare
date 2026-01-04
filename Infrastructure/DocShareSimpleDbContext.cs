@@ -1,8 +1,12 @@
-﻿using Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-
+using Domain.Entities;
 namespace Infrastructure
 {
+
+
+
     public partial class DocShareSimpleDbContext : DbContext
     {
         public DocShareSimpleDbContext()
@@ -24,11 +28,11 @@ namespace Infrastructure
         {
             modelBuilder.Entity<Document>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Document__3214EC0732BA2428");
+                entity.HasKey(e => e.Id).HasName("PK__Document__3214EC07D4774AD4");
 
                 entity.HasIndex(e => e.FileHash, "IX_Documents_FileHash");
 
-                entity.HasIndex(e => e.Slug, "UQ__Document__BC7B5FB6E7DE89FD").IsUnique();
+                entity.HasIndex(e => e.Slug, "UQ__Document__BC7B5FB6A7317949").IsUnique();
 
                 entity.Property(e => e.CreatedAt)
                     .HasDefaultValueSql("(getdate())")
@@ -63,18 +67,18 @@ namespace Infrastructure
                             .HasConstraintName("FK_DocTags_Doc"),
                         j =>
                         {
-                            j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE92095B561F0EC");
+                            j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE9209589561257");
                             j.ToTable("DocumentTags");
                         });
             });
 
             modelBuilder.Entity<Tag>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC0713223C17");
+                entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC07922285CA");
 
                 entity.HasIndex(e => e.Slug, "IX_Tags_Slug");
 
-                entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB66CA004F1").IsUnique();
+                entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB618AB8F97").IsUnique();
 
                 entity.Property(e => e.Name).HasMaxLength(50);
                 entity.Property(e => e.Slug)
@@ -84,12 +88,15 @@ namespace Infrastructure
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07863DCE0C");
+                entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07D7FDAB89");
 
-                entity.HasIndex(e => e.Username, "UQ__Users__536C85E49F58AFD6").IsUnique();
+                entity.HasIndex(e => e.Username, "UQ__Users__536C85E4993621D0").IsUnique();
 
-                entity.HasIndex(e => e.Email, "UQ__Users__A9D10534006133DD").IsUnique();
+                entity.HasIndex(e => e.Email, "UQ__Users__A9D10534EAC86FCF").IsUnique();
 
+                entity.Property(e => e.AvartarUrl)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
                 entity.Property(e => e.CreatedAt)
                     .HasDefaultValueSql("(getdate())")
                     .HasColumnType("datetime");
@@ -97,19 +104,21 @@ namespace Infrastructure
                     .HasMaxLength(100)
                     .IsUnicode(false);
                 entity.Property(e => e.FullName).HasMaxLength(100);
+                entity.Property(e => e.IsActivate).HasDefaultValue((byte)1);
                 entity.Property(e => e.PasswordHash)
                     .HasMaxLength(255)
                     .IsUnicode(false);
+                entity.Property(e => e.RefreshToken)
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+                entity.Property(e => e.RefreshTokenExpiryTime).HasColumnType("datetime");
+                entity.Property(e => e.Role)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasDefaultValue("User");
                 entity.Property(e => e.Username)
                     .HasMaxLength(50)
                     .IsUnicode(false);
-                entity.Property(e => e.RefreshToken)
-                    .HasMaxLength(65)
-                    .IsUnicode(false);
-                entity.Property(e => e.RefreshTokenExpiryTime)
-                    .HasColumnType("datetime");
-                entity.Property(e => e.Role)
-                    .HasMaxLength(50);
             });
 
             OnModelCreatingPartial(modelBuilder);
@@ -117,5 +126,4 @@ namespace Infrastructure
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
-
 }
