@@ -9,5 +9,6 @@ namespace Application.Interfaces
     public interface IUnitOfWork
     {
         public IUsers usersRepo { get; }
+        public IDocuments documentsRepo {get ;}
     }
 }

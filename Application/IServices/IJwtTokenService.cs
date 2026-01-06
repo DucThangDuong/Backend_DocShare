@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using Domain.DTOs;
+using Application.DTOs;
 
 namespace Application.IServices
 {

@@ -26,7 +26,7 @@ namespace API.Controllers
             _authService = authService;
         }
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDTo userlogin)
+        public async Task<IActionResult> Login([FromBody] ReqLoginDTo userlogin)
         {
             if (userlogin == null || string.IsNullOrEmpty(userlogin.Email) || string.IsNullOrEmpty(userlogin.Password))
             {
@@ -65,14 +65,14 @@ namespace API.Controllers
                 HttpOnly = true,
                 Expires = expires,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 IsEssential = true
             };
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto request)
+        public async Task<IActionResult> Register([FromBody] ReqRegisterDto request)
         {
             if (!ModelState.IsValid)
             {
@@ -92,7 +92,7 @@ namespace API.Controllers
                 FullName = request.Username,
                 CreatedAt = DateTime.Now,
                 Role = "User",
-                IsActivate=1
+                IsActive = true,
             };
             bool result=await _repo.usersRepo.CreateUserAsync(newUser);
             if (!result)
@@ -104,36 +104,13 @@ namespace API.Controllers
             }
             return Created();
         }
-
-        [Authorize]
-        [HttpGet("me")]
-        public async Task<IActionResult> GetMe()
-        {
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!string.IsNullOrEmpty(userId))
-            {
-
-                var user = await _repo.usersRepo.GetUserAsync(int.Parse(userId));
-
-                if (user == null) return NotFound();
-                return Ok(new
-                {
-                    id = user.Id,
-                    username = user.FullName,
-                    email = user.Email,
-                    avatar = user.AvartarUrl
-                });
-            }
-            return BadRequest();
-        }
         [HttpPost("google-login")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDTO model)
+        public async Task<IActionResult> GoogleLogin([FromBody] ReqGoogleLoginDTO model)
         {
             if (string.IsNullOrEmpty(model.IdToken))
             {
                 return BadRequest(new { message = "ID Token is required." });
             }
-
             try
             {
                 var result = await _authService.HandleGoogleLoginAsync(model.IdToken);
@@ -155,5 +132,48 @@ namespace API.Controllers
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return BadRequest(new { message = "Không tìm thấy Refresh Token trong Cookie." });
+            }
+            var user = await _repo.usersRepo.GetUserByRefreshTokenAsync(refreshToken);
+            if (user == null)
+            {
+                return Unauthorized(new { message = "Token không hợp lệ." });
+            }
+
+            if (user.RefreshToken != refreshToken)
+            {
+                return Unauthorized(new { message = "Token không khớp." });
+            }
+
+            if (user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            {
+                return Unauthorized(new { message = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." });
+            }
+            var newAccessToken = _generateJwtToken.GenerateAccessToken(user.Id, user.Email!, user.Role!);
+            return Ok(new
+            {
+                success = true,
+                accessToken = newAccessToken
+            });
+        }
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            Response.Cookies.Delete("refreshToken");
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId != null)
+            {
+                await _repo.usersRepo.RevokeRefreshTokenAsync(int.Parse(userId));
+            }
+            return Ok(new { message = "Đăng xuất thành công" });
+        }
     }
-}
+}   

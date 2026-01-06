@@ -2,7 +2,7 @@
 
 namespace API.DTOs
 {
-    public class RegisterDto
+    public class ReqRegisterDto
     {
         [Required(ErrorMessage = "Email không được để trống")]
         [EmailAddress(ErrorMessage = "Email không đúng định dạng")]
@@ -15,7 +15,7 @@ namespace API.DTOs
         [Required(ErrorMessage = "Họ tên không được để trống")]
         public string Username { get; set; }
     }
-    public class LoginDTo
+    public class ReqLoginDTo
     {
         [Required(ErrorMessage = "Email không được để trống")]
         [EmailAddress(ErrorMessage = "Email không đúng định dạng")]
@@ -23,7 +23,7 @@ namespace API.DTOs
         [Required(ErrorMessage = "Mật khẩu không được để trống")]
         public string? Password { get; set; }
     }
-    public class GoogleLoginDTO
+    public class ReqGoogleLoginDTO
     {
         public string IdToken { get; set; } = string.Empty;
     }

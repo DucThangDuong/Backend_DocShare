@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Domain.DTOs;
+using Application.DTOs;
 
 public class JwtTokenService :IJwtTokenService
 {
@@ -57,14 +57,13 @@ public class JwtTokenService :IJwtTokenService
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["SecretKey"]));
+        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["SecretKey"] ?? ""));
 
         var token = new JwtSecurityToken(
             expires: DateTime.UtcNow.AddMinutes(15),
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
         );
-
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
     public RefreshToken GenerateRefreshToken()

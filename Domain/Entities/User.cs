@@ -13,9 +13,9 @@ public partial class User
 
     public string PasswordHash { get; set; } = null!;
 
-    public string? FullName { get; set; }
+    public string FullName { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public string? RefreshToken { get; set; }
 
@@ -23,9 +23,13 @@ public partial class User
 
     public string? Role { get; set; }
 
-    public string? AvartarUrl { get; set; }
+    public string? AvatarUrl { get; set; }
 
-    public byte? IsActivate { get; set; }
+    public bool? IsActive { get; set; }
+
+    public long StorageLimit { get; set; }
+
+    public long UsedStorage { get; set; }
 
     public virtual ICollection<Document> Documents { get; set; } = new List<Document>();
 }

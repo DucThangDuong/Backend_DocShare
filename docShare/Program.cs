@@ -19,14 +19,15 @@ namespace API
                 option.AddPolicy("CORS", options =>
                 {
                     options
-                    .AllowAnyOrigin()
+                    .WithOrigins("Http://localhost:5173")
                     .AllowAnyMethod()
-                    .AllowAnyHeader();
+                    .AllowAnyHeader()
+                    .AllowCredentials();
                 });
             });
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddDbContext<DocShareSimpleDbContext>(options =>
+            builder.Services.AddDbContext<DocShareContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DocShare"));
             });
@@ -56,10 +57,11 @@ namespace API
             //    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
             //    options.AddPolicy("User", policy => policy.RequireRole("Admin", "Độc giả"));
             //});
-            builder.Services.AddScoped<IUsers,Users_Repo>();
+            builder.Services.AddScoped<IUsers,UsersRepo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IGoogleAuthService,GoogleAuthService>();
+            builder.Services.AddScoped<IDocuments,DocumentsRepo>();
 
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())

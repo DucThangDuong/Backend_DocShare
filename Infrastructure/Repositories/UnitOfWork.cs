@@ -9,13 +9,15 @@ namespace Infrastructure.Repositories
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly DocShareSimpleDbContext _context;
+        private readonly DocShareContext _context;
 
         public IUsers usersRepo { get; private set; }
+        public IDocuments documentsRepo { get; private set; }
 
-        public UnitOfWork(DocShareSimpleDbContext context) { 
+        public UnitOfWork(DocShareContext context) { 
             _context=context;
-            usersRepo = new Users_Repo(context);
+            usersRepo = new UsersRepo(context);
+            documentsRepo = new DocumentsRepo(context);
         }
     }
 }
