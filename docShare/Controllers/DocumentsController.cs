@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Application.DTOs;
+using API.Services;
+using Microsoft.VisualBasic;
 
 namespace API.Controllers
 {
@@ -15,11 +17,53 @@ namespace API.Controllers
     {
         private readonly IConfiguration _config;
         private readonly IUnitOfWork _repo;
-        public DocumentsController(IConfiguration config,IUnitOfWork repo)
+        private readonly RabbitMQService _rabbitMQService;
+        public DocumentsController(IConfiguration config,IUnitOfWork repo,RabbitMQService rabbitMQService)
         {
             _config = config;
             _repo = repo;
+            _rabbitMQService = rabbitMQService;
         }
+        [HttpPost("document/check")]
+        [Authorize]
+        public async Task<IActionResult> CheckDocument([FromForm] ReqCreateDocumentDTO dto)
+        {
+            if (dto.File == null || dto.File.Length == 0)
+                return BadRequest("Vui lòng chọn file.");
+            if (Path.GetExtension(dto.File.FileName).ToLower() != ".pdf")
+                return BadRequest("Chỉ chấp nhận file PDF.");
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            try
+            {
+                string storagePath = _config["FileStorage:UploadFolderPath"]!;
+                if (!Directory.Exists(storagePath))
+                {
+                    Directory.CreateDirectory(storagePath);
+                }
+                string uniqueFileName = $"{Path.GetFileNameWithoutExtension(dto.File.FileName)}" +
+                                        $"^_{Guid.NewGuid()}{Path.GetExtension(dto.File.FileName)}";
+                string fullPathOnDisk = Path.Combine(storagePath, uniqueFileName);
+                using (var stream = new FileStream(fullPathOnDisk, FileMode.Create))
+                {
+                    await dto.File.CopyToAsync(stream);
+                }
+                await _rabbitMQService.SendFileToScan(fullPathOnDisk, dto.SignalRConnectionID, dto.Title);
+                return Ok(new
+                {
+                    message = "File đã được tải lên và đang chờ quét.",
+                });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
         [HttpPost("document")]
         [Authorize] 
         public async Task<IActionResult> UploadDocument([FromForm] ReqCreateDocumentDTO dto)

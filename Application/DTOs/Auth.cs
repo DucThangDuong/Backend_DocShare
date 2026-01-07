@@ -17,4 +17,12 @@ namespace Application.DTOs
         public string Token { get; set; } = string.Empty;
         public DateTime ExpiryDate { get; set; }
     }
+    public class ScanFileResultDto
+    {
+        public string FilePath { get; set; }
+        public string Status { get; set; }
+        public string UserId { get; set; }
+        public string DocIdDto { get; set; }
+        public string Message { get; set; }
+    }
 }

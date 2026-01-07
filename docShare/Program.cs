@@ -51,18 +51,29 @@ namespace API
                         IssuerSigningKey = new SymmetricSecurityKey(key),
                         ClockSkew = TimeSpan.Zero
                     };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["accessToken"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
-            //builder.Services.AddAuthorization(options =>
-            //{
-            //    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-            //    options.AddPolicy("User", policy => policy.RequireRole("Admin", "Độc giả"));
-            //});
             builder.Services.AddScoped<IUsers,UsersRepo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IGoogleAuthService,GoogleAuthService>();
             builder.Services.AddScoped<IDocuments,DocumentsRepo>();
-
+            builder.Services.AddSignalR();
+            builder.Services.AddScoped<RabbitMQService>();
+            builder.Services.AddHostedService<RabbitMQWorker>();
+            builder.Services.AddScoped<NotificationHub>();
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())
             {
@@ -71,8 +82,11 @@ namespace API
             }
             app.UseCors("CORS");
             app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
+            app.MapHub<NotificationHub>("/notificationHub");
 
             app.Run();
 
