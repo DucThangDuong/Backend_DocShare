@@ -1,12 +1,15 @@
-﻿using Application.Interfaces;
+﻿using API.Services;
+using Application.Interfaces;
 using Application.IServices;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using API.Services;
+using System.Threading.RateLimiting;
 namespace API
 {
     public class Program
@@ -30,6 +33,50 @@ namespace API
             builder.Services.AddDbContext<DocShareContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DocShare"));
+            });
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.AddFixedWindowLimiter(policyName: "fixedwindow", configureOptions =>
+                {
+                    configureOptions.QueueLimit = 0;
+                    configureOptions.PermitLimit = 1000;
+                    configureOptions.Window = TimeSpan.FromSeconds(100);
+                    configureOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                });
+                options.AddPolicy("per_ip", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                            ? httpContext.User.Identity.Name!
+                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 500,
+                            Window = TimeSpan.FromSeconds(30),
+                            QueueLimit = 0
+                        }));
+                options.AddPolicy("ip_login", httpcontext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpcontext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromSeconds(30),
+                            QueueLimit = 0
+                        }));
+                options.AddPolicy("export_file_light", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                            ? httpContext.User.Identity.Name!
+                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 5,
+                                Window = TimeSpan.FromSeconds(30),
+                                QueueLimit = 0
+                            }));
+
+
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             });
             builder.Services.AddAuthentication(options =>
             {
@@ -80,6 +127,9 @@ namespace API
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
+            app.UseRateLimiter();
+            app.UseHttpsRedirection();
+            app.UseRouting();
             app.UseCors("CORS");
             app.UseHttpsRedirection();
             app.UseRouting();

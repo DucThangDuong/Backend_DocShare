@@ -1,5 +1,4 @@
 ﻿using Application.DTOs;
-
 namespace Application.IServices
 {
     public interface IGoogleAuthService

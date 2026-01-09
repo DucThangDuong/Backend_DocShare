@@ -6,6 +6,7 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client.Extensibility;
 using System.Security.Claims;
@@ -25,6 +26,7 @@ namespace API.Controllers
             _generateJwtToken = jwttoken;
             _authService = authService;
         }
+        [EnableRateLimiting("ip_login")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] ReqLoginDTo userlogin)
         {
@@ -71,6 +73,7 @@ namespace API.Controllers
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
+        [EnableRateLimiting("ip_login")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] ReqRegisterDto request)
         {
@@ -105,6 +108,7 @@ namespace API.Controllers
             return Created();
         }
         [HttpPost("google-login")]
+        [EnableRateLimiting("ip_login")]
         public async Task<IActionResult> GoogleLogin([FromBody] ReqGoogleLoginDTO model)
         {
             if (string.IsNullOrEmpty(model.IdToken))
