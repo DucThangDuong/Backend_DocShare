@@ -1,14 +1,13 @@
 ﻿using API.DTOs;
+using API.Services;
+using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Application.DTOs;
-using API.Services;
-using Microsoft.VisualBasic;
-
+using System.Text;
+using System.Text.RegularExpressions;
 namespace API.Controllers
 {
     [Route("api")]
@@ -65,7 +64,7 @@ namespace API.Controllers
         }
 
         [HttpPost("document")]
-        [Authorize] 
+        [Authorize]
         public async Task<IActionResult> UploadDocument([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
@@ -75,7 +74,7 @@ namespace API.Controllers
                 return BadRequest("Chỉ chấp nhận file PDF.");
             try
             {
-                string storagePath = _config["FileStorage:UploadFolderPath"]! ;
+                string storagePath = _config["FileStorage:UploadFolderPath"]!;
 
                 if (!Directory.Exists(storagePath))
                     Directory.CreateDirectory(storagePath);
@@ -89,7 +88,7 @@ namespace API.Controllers
                     await dto.File.CopyToAsync(stream);
                 }
                 string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if(userId == null)
+                if (userId == null)
                 {
                     return Unauthorized();
                 }
@@ -103,7 +102,33 @@ namespace API.Controllers
                     IsDeleted = 0,
                     CreatedAt = DateTime.UtcNow
                 };
-                bool iscreate=await _repo.documentsRepo.CreateAsync(newDoc);
+                if (!string.IsNullOrEmpty(dto.Tags))
+                {
+                    List<string> tagNames = dto.Tags.Split(',')
+                        .Select(t => t.Trim().TrimStart('#'))
+                        .Where(t => !string.IsNullOrEmpty(t))
+                        .Distinct().ToList();
+                    foreach (var tagName in tagNames)
+                    {
+                        string tagSlug = GenerateSlug(tagName);
+                        var existingTag = await _repo.tagsRepo.HasTag(tagSlug, tagName);
+
+                        if (existingTag != null)
+                        {
+                            newDoc.Tags.Add(existingTag);
+                        }
+                        else
+                        {
+                            var newTag = new Tag
+                            {
+                                Name = tagName,
+                                Slug = tagSlug
+                            };
+                            newDoc.Tags.Add(newTag);
+                        }
+                    }
+                }
+                bool iscreate = await _repo.documentsRepo.CreateAsync(newDoc);
                 if (iscreate)
                 {
                     return Created();
@@ -118,6 +143,23 @@ namespace API.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
+        public static string GenerateSlug(string phrase)
+        {
+            string str = phrase.ToLower();
+            str = ConvertToUnSign(str);
+            str = Regex.Replace(str, @"\s+", "-");
+            str = Regex.Replace(str, @"[^a-z0-9\s-]", "");
+            str = Regex.Replace(str, @"\s+", " ").Trim();
+            str = Regex.Replace(str, @"\s", "-");
+            return str;
+        }
+        private static string ConvertToUnSign(string s)
+        {
+            Regex regex = new Regex("\\p{IsCombiningDiacriticalMarks}+");
+            string temp = s.Normalize(NormalizationForm.FormD);
+            return regex.Replace(temp, String.Empty).Replace('\u0111', 'd').Replace('\u0110', 'D');
+        }
+
         [HttpGet("documents")]
         [Authorize]
         public async Task<IActionResult> GetInforDoc([FromQuery] int skip = 0, [FromQuery] int take = 10)
@@ -137,6 +179,39 @@ namespace API.Controllers
             {
                 return BadRequest("Có lỗi xảy ra khi tải dữ liệu.");
             }
+        }
+        [HttpGet("document/download/{docid}")]
+        public async Task<IActionResult> GetPdf(int docid)
+        {
+            Document? document = await _repo.documentsRepo.GetDocByIDAsync(docid);
+            if(document == null)
+            {
+                return BadRequest();
+            }
+            if (!System.IO.File.Exists(document.FileUrl)) return NotFound();
+
+            var memory = new MemoryStream();
+            using (var stream = new FileStream(document.FileUrl, FileMode.Open))
+            {
+                await stream.CopyToAsync(memory);
+            }
+            memory.Position = 0;
+            return File(memory, "application/pdf", document.Title);
+        }
+        [HttpGet("document/detail/{docid}")]
+        public async Task<IActionResult> GetDetailDoc(int docid) { 
+            bool ishas=await _repo.documentsRepo.HasDocument(docid);
+            if (!ishas)
+            {
+                return NotFound();
+            }
+            ResDocumentDto? result=await _repo.documentsRepo.GetDocWithUserByUserID(docid);
+            if(result == null)
+            {
+                return NotFound();
+            }
+            return Ok(result);
+
         }
     }
 }

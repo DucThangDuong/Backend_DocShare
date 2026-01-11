@@ -42,6 +42,11 @@ namespace Infrastructure.Repositories
             }
         }
 
+        public async Task<Document?> GetDocByIDAsync(int docId)
+        {
+            return await _context.Documents.FirstOrDefaultAsync(e=>e.Id == docId);
+        }
+
         public async Task<List<ResDocumentDto>> GetDocsByUserIdPagedAsync(int userId, int skip, int take)
         {
             return await _context.Documents
@@ -59,5 +64,28 @@ namespace Infrastructure.Repositories
                 }).ToListAsync();
         }
 
+        public async Task<ResDocumentDto?> GetDocWithUserByUserID(int docID)
+        {
+            return await _context.Documents.Where(e => e.Id==docID).Select(d=>new ResDocumentDto
+            {
+                Id = d.Id,
+                CreatedAt= d.CreatedAt,
+                Description = d.Description,
+                FileUrl = d.FileUrl,
+                Title = d.Title,
+                SizeInBytes= d.SizeInBytes,
+                Status = d.Status,
+                AvatarUrl= d.Uploader.AvatarUrl,
+                FullName = d.Uploader.FullName,
+                DislikeCount=d.DislikeCount,
+                LikeCount=d.LikeCount,
+                ViewCount=d.ViewCount,
+            }).FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> HasDocument(int docID)
+        {
+            return await _context.Documents.AnyAsync(e=>e.Id==docID);
+        }
     }
 }

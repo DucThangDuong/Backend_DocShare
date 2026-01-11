@@ -28,9 +28,9 @@ public partial class DocShareContext : DbContext
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC07E4938300");
+            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC07E6588E8B");
 
-            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6E0E76454").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6AD6BE599").IsUnique();
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -41,13 +41,17 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Document>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC070CEBB10C");
+            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC07A2D863E0");
 
             entity.ToTable(tb =>
                 {
                     tb.HasTrigger("trg_UpdateUsedStorage_OnDelete");
                     tb.HasTrigger("trg_UpdateUsedStorage_OnInsert");
                 });
+
+            entity.HasIndex(e => e.IsDeleted, "IX_Documents_IsDeleted");
+
+            entity.HasIndex(e => e.UploaderId, "IX_Documents_UploaderId");
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -87,16 +91,18 @@ public partial class DocShareContext : DbContext
                         .HasConstraintName("FK_DocTags_Doc"),
                     j =>
                     {
-                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920955836D4DD");
+                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920951F72448F");
                         j.ToTable("DocumentTags");
                     });
         });
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC07A484C8E1");
+            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC0766F29A61");
 
-            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB6B757F83A").IsUnique();
+            entity.HasIndex(e => e.Slug, "IX_Tags_Slug");
+
+            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB62AB80CE4").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
             entity.Property(e => e.Slug)
@@ -106,11 +112,11 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC074850AC6E");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC078467ECFA");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E4DC75D1E8").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E472DE89C5").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D1053443B89E42").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D105345E2DBB24").IsUnique();
 
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(255)
@@ -135,7 +141,6 @@ public partial class DocShareContext : DbContext
                 .IsUnicode(false)
                 .HasDefaultValue("User");
             entity.Property(e => e.StorageLimit).HasDefaultValueSql("((5368709120.))");
-            entity.Property(e => e.UsedStorage).HasDefaultValue(0L);
             entity.Property(e => e.Username)
                 .HasMaxLength(50)
                 .IsUnicode(false);

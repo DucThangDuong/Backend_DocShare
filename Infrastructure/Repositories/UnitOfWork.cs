@@ -13,11 +13,14 @@ namespace Infrastructure.Repositories
 
         public IUsers usersRepo { get; private set; }
         public IDocuments documentsRepo { get; private set; }
+        public ITags tagsRepo { get; private set; }
 
-        public UnitOfWork(DocShareContext context) { 
-            _context=context;
+        public UnitOfWork(DocShareContext context)
+        {
+            _context = context;
             usersRepo = new UsersRepo(context);
             documentsRepo = new DocumentsRepo(context);
+            tagsRepo = new TagRepo(context);
         }
     }
 }

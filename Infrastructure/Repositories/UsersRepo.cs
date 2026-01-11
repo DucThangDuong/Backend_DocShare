@@ -77,7 +77,7 @@ namespace Infrastructure.Repositories
         public async Task<ResUserStorageFileDto?> GetUserStorageStatsAsync(int userId)
         {
             return await _context.Users
-                .Where(u => u.Id == userId)
+                .Where(e => e.Id == userId)
                 .Select(u => new ResUserStorageFileDto
                 {
                     StorageLimit = u.StorageLimit,

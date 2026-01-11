@@ -9,6 +9,7 @@ namespace Application.Interfaces
     public interface IUnitOfWork
     {
         public IUsers usersRepo { get; }
-        public IDocuments documentsRepo {get ;}
+        public IDocuments documentsRepo { get; }
+        public ITags tagsRepo { get; }
     }
 }

@@ -29,6 +29,12 @@ public partial class Document
 
     public DateTime? UpdatedAt { get; set; }
 
+    public int ViewCount { get; set; }
+
+    public int LikeCount { get; set; }
+
+    public int DislikeCount { get; set; }
+
     public virtual Category? Category { get; set; }
 
     public virtual User Uploader { get; set; } = null!;

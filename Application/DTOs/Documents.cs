@@ -9,19 +9,17 @@ namespace Application.DTOs
     public class ResDocumentDto
     {
         public long Id { get; set; }
-
         public string Title { get; set; } = null!;
-
         public string? Description { get; set; }
-
         public string FileUrl { get; set; } = null!;
-
         public long SizeInBytes { get; set; }
-
         public string? Status { get; set; }
-
         public DateTime? CreatedAt { get; set; }
-
+        public string? FullName { get; set; }
+        public string? AvatarUrl { get; set; }
+        public int? ViewCount { get; set; }
+        public int? LikeCount { get; set; }
+        public int? DislikeCount { get; set; }
     }
     public class ResUserStorageFileDto
     {

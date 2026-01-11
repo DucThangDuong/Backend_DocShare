@@ -117,6 +117,7 @@ namespace API
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IGoogleAuthService,GoogleAuthService>();
             builder.Services.AddScoped<IDocuments,DocumentsRepo>();
+            builder.Services.AddScoped<ITags, TagRepo>();
             builder.Services.AddSignalR();
             builder.Services.AddScoped<RabbitMQService>();
             builder.Services.AddHostedService<RabbitMQWorker>();
