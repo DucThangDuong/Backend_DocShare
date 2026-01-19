@@ -31,7 +31,6 @@ namespace Infrastructure.Repositories
         {
             try
             {
-
                 await _context.Documents.AddAsync(document);
                 await _context.SaveChangesAsync();
                 return true;

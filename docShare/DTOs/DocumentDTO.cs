@@ -7,6 +7,6 @@
         public string? Description { get; set; }
         public string? Tags { get; set; }
         public string? Status  { get; set; } 
-        public string? SignalRConnectionID { get; set; }
+        public string? userId { get; set; }
     }
 }

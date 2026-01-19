@@ -4,8 +4,9 @@ using Application.IServices;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
+using Amazon.S3;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -102,7 +103,7 @@ namespace API
                     {
                         OnMessageReceived = context =>
                         {
-                            var accessToken = context.Request.Query["accessToken"];
+                            var accessToken = context.Request.Query["access_token"];
                             var path = context.HttpContext.Request.Path;
                             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
                             {
@@ -112,6 +113,26 @@ namespace API
                         }
                     };
                 });
+            var storageConfig = builder.Configuration.GetSection("Storage");
+
+            builder.Services.AddDefaultAWSOptions(new Amazon.Extensions.NETCore.Setup.AWSOptions
+            {
+                Credentials = new Amazon.Runtime.BasicAWSCredentials(
+                    storageConfig["AccessKey"],
+                    storageConfig["SecretKey"]),
+                Region = Amazon.RegionEndpoint.USEast1 
+            });
+            builder.Services.AddSingleton<IAmazonS3>(sp =>
+            {
+                var config = new AmazonS3Config
+                {
+                    ServiceURL = storageConfig["ServiceUrl"],
+                    ForcePathStyle = true 
+                };
+                return new AmazonS3Client(
+                    storageConfig["AccessKey"],
+                    storageConfig["SecretKey"],config);
+            });
             builder.Services.AddScoped<IUsers,UsersRepo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -120,25 +141,25 @@ namespace API
             builder.Services.AddScoped<ITags, TagRepo>();
             builder.Services.AddSignalR();
             builder.Services.AddScoped<RabbitMQService>();
-            builder.Services.AddHostedService<RabbitMQWorker>();
             builder.Services.AddScoped<NotificationHub>();
+            builder.Services.AddSingleton<ISignalRService, SignalRService>();
+            builder.Services.AddHostedService<RabbitMQWorker>();
+            builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+            builder.Services.AddSingleton<IStorageService,S3StorageService>();
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
-            app.UseRateLimiter();
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors("CORS");
-            app.UseHttpsRedirection();
-            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseRateLimiter();
             app.MapControllers();
             app.MapHub<NotificationHub>("/notificationHub");
-
             app.Run();
 
         }

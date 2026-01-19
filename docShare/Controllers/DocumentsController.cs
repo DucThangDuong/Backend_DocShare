@@ -2,6 +2,7 @@
 using API.Services;
 using Application.DTOs;
 using Application.Interfaces;
+using Application.IServices;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,11 +18,13 @@ namespace API.Controllers
         private readonly IConfiguration _config;
         private readonly IUnitOfWork _repo;
         private readonly RabbitMQService _rabbitMQService;
-        public DocumentsController(IConfiguration config,IUnitOfWork repo,RabbitMQService rabbitMQService)
+        private readonly IStorageService _storageService;
+        public DocumentsController(IConfiguration config,IUnitOfWork repo,RabbitMQService rabbitMQService, IStorageService storageService)
         {
             _config = config;
             _repo = repo;
             _rabbitMQService = rabbitMQService;
+            _storageService = storageService;
         }
         [HttpPost("document/check")]
         [Authorize]
@@ -38,19 +41,18 @@ namespace API.Controllers
             }
             try
             {
-                string storagePath = _config["FileStorage:UploadFolderPath"]!;
-                if (!Directory.Exists(storagePath))
-                {
-                    Directory.CreateDirectory(storagePath);
-                }
-                string uniqueFileName = $"{Path.GetFileNameWithoutExtension(dto.File.FileName)}" +
+                string s3ObjectKey = $"{Path.GetFileNameWithoutExtension(dto.File.FileName)}" +
                                         $"^_{Guid.NewGuid()}{Path.GetExtension(dto.File.FileName)}";
-                string fullPathOnDisk = Path.Combine(storagePath, uniqueFileName);
-                using (var stream = new FileStream(fullPathOnDisk, FileMode.Create))
+                bool isExist = await _storageService.FileExistsAsync(s3ObjectKey);
+                if (isExist)
                 {
-                    await dto.File.CopyToAsync(stream);
+                    return BadRequest($"File '{dto.File.FileName}' đã tồn tại trên hệ thống. Vui lòng đổi tên hoặc kiểm tra lại.");
                 }
-                await _rabbitMQService.SendFileToScan(fullPathOnDisk, dto.SignalRConnectionID, dto.Title);
+                using (var stream = dto.File.OpenReadStream())
+                {
+                    await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf");
+                }
+                await _rabbitMQService.SendFileToScan(s3ObjectKey, $"{userId}", $"{dto.Title}");
                 return Ok(new
                 {
                     message = "File đã được tải lên và đang chờ quét.",
@@ -94,7 +96,7 @@ namespace API.Controllers
                 }
                 var newDoc = new Document
                 {
-                    Title = dto.Title,
+                    Title = $"{dto.Title}",
                     FileUrl = fullPathOnDisk,
                     SizeInBytes = dto.File.Length,
                     UploaderId = int.Parse(userId!),
@@ -177,6 +179,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
+                Console.Error.WriteLine(ex);
                 return BadRequest("Có lỗi xảy ra khi tải dữ liệu.");
             }
         }
