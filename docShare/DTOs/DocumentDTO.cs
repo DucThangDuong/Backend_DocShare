@@ -9,4 +9,8 @@
         public string? Status  { get; set; } 
         public string? userId { get; set; }
     }
+    public class ReqMoveToTrashDTO
+    {
+        public bool isDeleted { get; set; }
+    }
 }

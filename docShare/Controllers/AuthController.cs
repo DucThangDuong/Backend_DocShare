@@ -87,15 +87,17 @@ namespace API.Controllers
                 return Conflict (new { message = "Email này đã tồn tại" });
             }
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            string username= request.Email.Substring(0, request.Email.LastIndexOf('@'));
             var newUser = new User
             {
                 Email = request.Email,
                 PasswordHash = passwordHash,
-                Username = request.Username,
-                FullName = request.Username,
+                Username = username,
+                FullName = request.Fullname,
                 CreatedAt = DateTime.Now,
                 Role = "User",
                 IsActive = true,
+                AvatarUrl= "default-avatar.jpg",
             };
             bool result=await _repo.usersRepo.CreateUserAsync(newUser);
             if (!result)

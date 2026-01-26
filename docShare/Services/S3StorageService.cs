@@ -1,42 +1,51 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
+using Application.DTOs;
 using Application.IServices;
-
+using System.Text;
+using System.Text.RegularExpressions;
 namespace API.Services
 {
     public class S3StorageService:IStorageService
     {
         private readonly IAmazonS3 _s3Client;
-        private readonly string _bucketName;
-
+        private readonly string _File_storage;
+        private readonly string _avatarBucket;
         public S3StorageService(IAmazonS3 s3Client, IConfiguration config)
         {
             _s3Client = s3Client;
-            _bucketName = config["Storage:BucketName"] ?? "";
+            _File_storage = config["Storage:File_storage"] ?? "";
+            _avatarBucket = config["Storage:Avatar_storage"] ?? "";
         }
-
-        public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
+        private string GetBucketName(StorageType type)
         {
+            return type == StorageType.Avatar ? _avatarBucket : _File_storage;
+        }
+        public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, StorageType type)
+        {
+            string targetBucket = GetBucketName(type);
             var request = new PutObjectRequest
             {
-                BucketName = _bucketName,
+                BucketName = targetBucket,
                 Key = fileName,
                 InputStream = fileStream,
                 ContentType = contentType
             };
 
             await _s3Client.PutObjectAsync(request);
-            return $"{_s3Client.Config.ServiceURL}/{_bucketName}/{fileName}";
+            return $"{_s3Client.Config.ServiceURL}/{_File_storage}/{fileName}";
         }
-        public async Task DeleteFileAsync(string fileName)
+        public async Task DeleteFileAsync(string fileName, StorageType type)
         {
-            await _s3Client.DeleteObjectAsync(_bucketName, fileName);
+            string targetBucket = GetBucketName(type);
+            await _s3Client.DeleteObjectAsync(_File_storage, targetBucket);
         }
-        public async Task<bool> FileExistsAsync(string fileName)
+        public async Task<bool> FileExistsAsync(string fileName, StorageType type)
         {
             try
             {
-                await _s3Client.GetObjectMetadataAsync(_bucketName, fileName);
+                string targetBucket = GetBucketName(type);
+                await _s3Client.GetObjectMetadataAsync(_File_storage, targetBucket);
                 return true; 
             }
             catch (AmazonS3Exception ex)
@@ -48,13 +57,14 @@ namespace API.Services
                 throw; 
             }
         }
-        public async Task<Stream> GetFileStreamAsync(string fileName)
+        public async Task<Stream> GetFileStreamAsync(string fileName, StorageType type)
         {
             try
             {
+                string targetBucket = GetBucketName(type);
                 var request = new GetObjectRequest
                 {
-                    BucketName = _bucketName,
+                    BucketName = targetBucket,
                     Key = fileName
                 };
 

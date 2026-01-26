@@ -19,7 +19,7 @@ namespace API.Controllers
         private readonly IUnitOfWork _repo;
         private readonly RabbitMQService _rabbitMQService;
         private readonly IStorageService _storageService;
-        public DocumentsController(IConfiguration config,IUnitOfWork repo,RabbitMQService rabbitMQService, IStorageService storageService)
+        public DocumentsController(IConfiguration config, IUnitOfWork repo, RabbitMQService rabbitMQService, IStorageService storageService)
         {
             _config = config;
             _repo = repo;
@@ -41,16 +41,19 @@ namespace API.Controllers
             }
             try
             {
-                string s3ObjectKey = $"{Path.GetFileNameWithoutExtension(dto.File.FileName)}" +
-                                        $"^_{Guid.NewGuid()}{Path.GetExtension(dto.File.FileName)}";
-                bool isExist = await _storageService.FileExistsAsync(s3ObjectKey);
+                string rawFileName = Path.GetFileNameWithoutExtension(dto.File.FileName);
+                string safeFileName = SanitizeFileName(rawFileName);
+                string extension = Path.GetExtension(dto.File.FileName).ToLower();
+                string dateFolder = DateTime.Now.ToString("yyyy-MM-dd");
+                string s3ObjectKey = $"{userId}/{dateFolder}/{safeFileName}_{Guid.NewGuid().ToString().Substring(0, 8)}{extension}";
+                bool isExist = await _storageService.FileExistsAsync(s3ObjectKey,StorageType.Document);
                 if (isExist)
                 {
                     return BadRequest($"File '{dto.File.FileName}' đã tồn tại trên hệ thống. Vui lòng đổi tên hoặc kiểm tra lại.");
                 }
                 using (var stream = dto.File.OpenReadStream())
                 {
-                    await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf");
+                    await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf",StorageType.Document);
                 }
                 await _rabbitMQService.SendFileToScan(s3ObjectKey, $"{userId}", $"{dto.Title}");
                 return Ok(new
@@ -76,20 +79,21 @@ namespace API.Controllers
                 return BadRequest("Chỉ chấp nhận file PDF.");
             try
             {
-                string storagePath = _config["FileStorage:UploadFolderPath"]!;
-
-                if (!Directory.Exists(storagePath))
-                    Directory.CreateDirectory(storagePath);
-
-                string uniqueFileName = $"{Path.GetFileNameWithoutExtension(dto.File.FileName)}" +
-                    $"^_{Guid.NewGuid()}{Path.GetExtension(dto.File.FileName)}";
-
-                string fullPathOnDisk = Path.Combine(storagePath, uniqueFileName);
-                using (var stream = new FileStream(fullPathOnDisk, FileMode.Create))
-                {
-                    await dto.File.CopyToAsync(stream);
-                }
                 string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                string rawFileName = Path.GetFileNameWithoutExtension(dto.File.FileName);
+                string safeFileName = SanitizeFileName(rawFileName);
+                string extension = Path.GetExtension(dto.File.FileName).ToLower();
+                string dateFolder = DateTime.Now.ToString("yyyy-MM-dd");
+                string s3ObjectKey = $"{userId}/{dateFolder}/{safeFileName}_{Guid.NewGuid().ToString().Substring(0, 8)}{extension}";
+                bool isExist = await _storageService.FileExistsAsync(s3ObjectKey,StorageType.Document);
+                if (isExist)
+                {
+                    return BadRequest($"File '{dto.File.FileName}' đã tồn tại trên hệ thống. Vui lòng đổi tên hoặc kiểm tra lại.");
+                }
+                using (var stream = dto.File.OpenReadStream())
+                {
+                    await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf", StorageType.Document);
+                }
                 if (userId == null)
                 {
                     return Unauthorized();
@@ -97,7 +101,7 @@ namespace API.Controllers
                 var newDoc = new Document
                 {
                     Title = $"{dto.Title}",
-                    FileUrl = fullPathOnDisk,
+                    FileUrl = s3ObjectKey,
                     SizeInBytes = dto.File.Length,
                     UploaderId = int.Parse(userId!),
                     Status = dto.Status,
@@ -145,23 +149,6 @@ namespace API.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
-        public static string GenerateSlug(string phrase)
-        {
-            string str = phrase.ToLower();
-            str = ConvertToUnSign(str);
-            str = Regex.Replace(str, @"\s+", "-");
-            str = Regex.Replace(str, @"[^a-z0-9\s-]", "");
-            str = Regex.Replace(str, @"\s+", " ").Trim();
-            str = Regex.Replace(str, @"\s", "-");
-            return str;
-        }
-        private static string ConvertToUnSign(string s)
-        {
-            Regex regex = new Regex("\\p{IsCombiningDiacriticalMarks}+");
-            string temp = s.Normalize(NormalizationForm.FormD);
-            return regex.Replace(temp, String.Empty).Replace('\u0111', 'd').Replace('\u0110', 'D');
-        }
-
         [HttpGet("documents")]
         [Authorize]
         public async Task<IActionResult> GetInforDoc([FromQuery] int skip = 0, [FromQuery] int take = 10)
@@ -187,34 +174,91 @@ namespace API.Controllers
         public async Task<IActionResult> GetPdf(int docid)
         {
             Document? document = await _repo.documentsRepo.GetDocByIDAsync(docid);
-            if(document == null)
+            if (document == null)
             {
-                return BadRequest();
+                return NotFound("Không tìm thấy thông tin tài liệu trong database.");
             }
-            if (!System.IO.File.Exists(document.FileUrl)) return NotFound();
-
-            var memory = new MemoryStream();
-            using (var stream = new FileStream(document.FileUrl, FileMode.Open))
+            bool fileExists = await _storageService.FileExistsAsync($"{document.FileUrl}",StorageType.Document);
+            if (!fileExists)
             {
-                await stream.CopyToAsync(memory);
+                return NotFound("Tệp tin không tồn tại trên hệ thống lưu trữ đám mây.");
             }
-            memory.Position = 0;
-            return File(memory, "application/pdf", document.Title);
+            var s3Stream = await _storageService.GetFileStreamAsync(document.FileUrl, StorageType.Document);
+            return File(s3Stream, "application/pdf", $"{document.Title}");
         }
         [HttpGet("document/detail/{docid}")]
-        public async Task<IActionResult> GetDetailDoc(int docid) { 
-            bool ishas=await _repo.documentsRepo.HasDocument(docid);
+        public async Task<IActionResult> GetDetailDoc(int docid) {
+            bool ishas = await _repo.documentsRepo.HasDocument(docid);
             if (!ishas)
             {
                 return NotFound();
             }
-            ResDocumentDto? result=await _repo.documentsRepo.GetDocWithUserByUserID(docid);
-            if(result == null)
+            ResDocumentDto? result = await _repo.documentsRepo.GetDocWithUserByUserID(docid);
+            if (result == null)
             {
                 return NotFound();
             }
             return Ok(result);
 
         }
+        [HttpPatch("document/{docid}")]
+        public async Task<IActionResult> MoveToTrash(int docid, [FromBody] ReqMoveToTrashDTO isdelete)
+        {
+            bool ishas = await _repo.documentsRepo.HasDocument(docid);
+            if (!ishas)
+            {
+                return NotFound();
+            }
+            if(isdelete.isDeleted == false)
+            {
+                return BadRequest("Yêu cầu không hợp lệ.");
+            }
+            bool isupdate = await _repo.documentsRepo.MoveToTrash(docid);
+            if (isupdate)
+            {
+                return NoContent();
+            }
+            return BadRequest("Lỗi khi cập nhật dữ liệu.");
+        }
+        public static string SanitizeFileName(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return fileName;
+            const string KeyChars = "áàạảãâấầậẩẫăắằặẳẵÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴéèẹẻẽêếềệểễÉÈẸẺẼÊẾỀỆỂỄóòọỏõôốồộổỗơớờợởỡÓÒỌỎÕÔỐỒỘỔỖƠỚỜỢỞỠúùụủũưứừựửữÚÙỤỦŨƯỨỪỰỬỮíìịỉĩÍÌỊỈĨđĐýỳỵỷỹÝỲỴỶỸ ";
+            const string ReplChars = "aaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAeeeeeeeeeeeEEEEEEEEEEEoooooooooooooooooOOOOOOOOOOOOOOOOOuuuuuuuuuuuUUUUUUUUUUUiiiiiIIIIIdDyyyyyYYYYY_";
+            StringBuilder sb = new StringBuilder(fileName.Length);
+            foreach (char c in fileName)
+            {
+                if (c == '^') continue;
+
+                int index = KeyChars.IndexOf(c);
+                if (index != -1)
+                {
+                    sb.Append(ReplChars[index]);
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+            string result = sb.ToString();
+            return Regex.Replace(result, @"[^a-zA-Z0-9_\-\.]", "");
+        }
+        public static string GenerateSlug(string phrase)
+        {
+            string str = phrase.ToLower();
+            str = ConvertToUnSign(str);
+            str = Regex.Replace(str, @"\s+", "-");
+            str = Regex.Replace(str, @"[^a-z0-9\s-]", "");
+            str = Regex.Replace(str, @"\s+", " ").Trim();
+            str = Regex.Replace(str, @"\s", "-");
+            return str;
+        }
+        private static string ConvertToUnSign(string s)
+        {
+            Regex regex = new Regex("\\p{IsCombiningDiacriticalMarks}+");
+            string temp = s.Normalize(NormalizationForm.FormD);
+            return regex.Replace(temp, String.Empty).Replace('\u0111', 'd').Replace('\u0110', 'D');
+        }
+
     }
 }

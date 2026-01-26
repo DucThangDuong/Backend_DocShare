@@ -25,4 +25,9 @@ namespace Application.DTOs
         public string DocIdDto { get; set; }
         public string Message { get; set; }
     }
+    public enum StorageType
+    {
+        Document,
+        Avatar
+    }
 }

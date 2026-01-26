@@ -18,6 +18,12 @@ namespace Application.Interfaces
         public Task<User?> GetUserByRefreshTokenAsync(string refreshToken);
         public Task RevokeRefreshTokenAsync(int userId);
         public Task<ResUserStorageFileDto?> GetUserStorageStatsAsync(int userId);
-        public  Task<ResUserPrivate?> GetUserPrivateProfileAsync (int userId);
+        public Task<ResUserPrivate?> GetUserPrivateProfileAsync(int userId);
+        public Task<bool> UpdateUserProfile(int userId, string? email, string? password, string? fullname);
+        public Task<bool> UpdateUserAvatar(int userId, string avatarFileName);
+        public Task<bool> ExistUserNameAsync(string username);
+        public Task<bool> UpdateUserNameAsync(string username,int userId);
+        public Task<bool> UpdateUserPassword(string newPassword, int userId);
+        public Task<string?> GetPasswordByUserId(int userId);
     }
 }

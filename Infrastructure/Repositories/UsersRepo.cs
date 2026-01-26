@@ -1,10 +1,12 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using Azure.Core;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 namespace Infrastructure.Repositories
@@ -103,6 +105,74 @@ namespace Infrastructure.Repositories
                     usedstorage = u.UsedStorage,
                     avatarurl=u.AvatarUrl ?? ""
                 })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> UpdateUserProfile(int userId, string? email, string? password, string? fullname)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return false;
+            }
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                user.Email = email;
+            }
+
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            }
+            if (!string.IsNullOrWhiteSpace(fullname))
+            {
+                user.FullName = fullname;
+            }
+            return await _context.SaveChangesAsync() > 0;
+        }
+        public async Task<bool> UpdateUserAvatar(int userId, string avatarFileName)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return false;
+            }
+            user.AvatarUrl = avatarFileName;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> ExistUserNameAsync(string username)
+        {
+            return await _context.Users.AnyAsync(e=>e.Username == username);
+        }
+
+        public async Task<bool> UpdateUserNameAsync(string username, int userId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
+            if (user == null)
+            {
+                return false;
+            }
+            user.Username = username;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateUserPassword(string newPassword, int userId)
+        {
+            var user= await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
+            if (user == null)
+            {
+                return false;
+            }
+            user.PasswordHash = newPassword;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public Task<string?> GetPasswordByUserId(int userId)
+        {
+            return _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.PasswordHash)
                 .FirstOrDefaultAsync();
         }
     }

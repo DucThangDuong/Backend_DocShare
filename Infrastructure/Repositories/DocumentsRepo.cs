@@ -41,6 +41,16 @@ namespace Infrastructure.Repositories
             }
         }
 
+        public async Task<bool> MoveToTrash(int docID)
+        {
+            var docchange = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docID);
+            if (docchange == null) return false;
+            docchange.IsDeleted = 1;
+            _context.Documents.Update(docchange);
+            var result = await _context.SaveChangesAsync();
+            return result > 0;
+        }
+
         public async Task<Document?> GetDocByIDAsync(int docId)
         {
             return await _context.Documents.FirstOrDefaultAsync(e=>e.Id == docId);

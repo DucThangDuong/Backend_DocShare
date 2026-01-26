@@ -17,5 +17,6 @@ namespace Application.Interfaces
         public Task<Document?> GetDocByIDAsync(int docId);
         public Task<ResDocumentDto?> GetDocWithUserByUserID(int docID);
         public Task<bool> HasDocument(int docID);
+        public Task<bool> MoveToTrash(int docID);
     }
 }

@@ -37,31 +37,43 @@ namespace API.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var factory = new ConnectionFactory { HostName = "localhost" };
-            using var connection = await factory.CreateConnectionAsync();
-            using var channel = await connection.CreateChannelAsync();
-            await channel.QueueDeclareAsync(queue: "pdf_result_queue", durable: true, false, false);
-
-            var consumer = new AsyncEventingBasicConsumer(channel);
-            consumer.ReceivedAsync += async (model, ea) =>
+            while (!stoppingToken.IsCancellationRequested)
             {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-                var result = JsonSerializer.Deserialize<ScanFileResultDto>(message);
-                await _signalRService.NotifyScanResultAsync(result.UserId, result);
-                await DeleteFile(result.FilePath);
-            };
+                try
+                {
 
-            await channel.BasicConsumeAsync(queue: "pdf_result_queue", autoAck: true, consumer: consumer);
-            await Task.Delay(Timeout.Infinite, stoppingToken);
+                    var factory = new ConnectionFactory { HostName = "localhost" };
+                    using var connection = await factory.CreateConnectionAsync();
+                    using var channel = await connection.CreateChannelAsync();
+                    await channel.QueueDeclareAsync(queue: "pdf_result_queue", durable: true, false, false);
+
+                    var consumer = new AsyncEventingBasicConsumer(channel);
+                    consumer.ReceivedAsync += async (model, ea) =>
+                    {
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        var result = JsonSerializer.Deserialize<ScanFileResultDto>(message);
+                        await _signalRService.NotifyScanResultAsync(result.UserId, result);
+                        await DeleteFile(result.FilePath);
+                    };
+
+                    await channel.BasicConsumeAsync(queue: "pdf_result_queue", autoAck: true, consumer: consumer);
+                    await Task.Delay(Timeout.Infinite, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Lỗi trong RabbitMQWorker: {ex.Message}");
+                    await Task.Delay(5000, stoppingToken);
+                }
+            }
         }
         protected async Task<bool> DeleteFile(string storagePath)
         {
             try
             {
-                if (await _storageService.FileExistsAsync(storagePath))
+                if (await _storageService.FileExistsAsync(storagePath, StorageType.Document))
                 {
-                    await _storageService.DeleteFileAsync(storagePath);
+                    await _storageService.DeleteFileAsync(storagePath, StorageType.Document);
                     return true;
                 }
                 else

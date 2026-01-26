@@ -13,7 +13,7 @@ namespace API.DTOs
         public string Password { get; set; }
 
         [Required(ErrorMessage = "Họ tên không được để trống")]
-        public string Username { get; set; }
+        public string Fullname { get; set; }
     }
     public class ReqLoginDTo
     {
