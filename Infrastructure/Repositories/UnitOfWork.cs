@@ -14,6 +14,7 @@ namespace Infrastructure.Repositories
         public IUsers usersRepo { get; private set; }
         public IDocuments documentsRepo { get; private set; }
         public ITags tagsRepo { get; private set; }
+        public IUserActivity userActivityRepo { get; private set; }
 
         public UnitOfWork(DocShareContext context)
         {
@@ -21,6 +22,7 @@ namespace Infrastructure.Repositories
             usersRepo = new UsersRepo(context);
             documentsRepo = new DocumentsRepo(context);
             tagsRepo = new TagRepo(context);
+            userActivityRepo = new UserActivity(context);
         }
     }
 }

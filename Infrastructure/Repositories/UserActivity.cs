@@ -1,0 +1,90 @@
+﻿using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Application.Interfaces;
+namespace Infrastructure.Repositories
+{
+    public class UserActivity : IUserActivity
+    {
+        public readonly DocShareContext _context;
+        public UserActivity(DocShareContext context)
+        {
+            _context = context;
+        }
+        public async Task<bool> VoteDocumentAsync(int userId, int docId, bool? isLike)
+        {
+            var existingVote = await _context.DocumentVotes
+                                             .FirstOrDefaultAsync(v => v.UserId == userId && v.DocumentId == docId);
+
+            if (existingVote != null)
+            {
+                if (isLike == null)
+                {
+                    _context.DocumentVotes.Remove(existingVote);
+                }
+                else if (existingVote.IsLike == isLike)
+                {
+                    _context.DocumentVotes.Remove(existingVote);
+                }
+                else
+                {
+                    existingVote.IsLike = isLike.Value;
+                    existingVote.VotedAt = DateTime.Now;
+                }
+            }
+            else
+            {
+                var newVote = new DocumentVote
+                {
+                    UserId = userId,
+                    DocumentId = docId,
+                    IsLike = isLike.Value,
+                    VotedAt = DateTime.Now
+                };
+                _context.DocumentVotes.Add(newVote);
+            }
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> ToggleSaveDocumentAsync(int userId, int docId)
+        {
+
+            var savedDoc = await _context.SavedDocuments
+                                         .FirstOrDefaultAsync(s => s.UserId == userId && s.DocumentId == docId);
+            if (savedDoc == null)
+            {
+                return false;
+            }
+
+            if (savedDoc != null)
+            {
+                _context.SavedDocuments.Remove(savedDoc);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            else
+            {
+                var newSave = new SavedDocument
+                {
+                    UserId = userId,
+                    DocumentId = docId,
+                    SavedAt = DateTime.Now,
+                };
+                _context.SavedDocuments.Add(newSave);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+        }
+
+        public async Task<List<Document>> GetSavedDocumentsByUserAsync(int userId)
+        {
+            return await _context.SavedDocuments.Where(s => s.UserId == userId)
+                           .Include(s => s.Document).Select(s => s.Document).ToListAsync();
+        }
+    }
+}
+

@@ -31,10 +31,6 @@ namespace API
             });
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddDbContext<DocShareContext>(options =>
-            {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DocShare"));
-            });
             builder.Services.AddRateLimiter(options =>
             {
                 options.AddFixedWindowLimiter(policyName: "fixedwindow", configureOptions =>
@@ -114,24 +110,10 @@ namespace API
                     };
                 });
             var storageConfig = builder.Configuration.GetSection("Storage");
-
-            builder.Services.AddDefaultAWSOptions(new Amazon.Extensions.NETCore.Setup.AWSOptions
+            //Repositories
+            builder.Services.AddDbContext<DocShareContext>(options =>
             {
-                Credentials = new Amazon.Runtime.BasicAWSCredentials(
-                    storageConfig["AccessKey"],
-                    storageConfig["SecretKey"]),
-                Region = Amazon.RegionEndpoint.USEast1 
-            });
-            builder.Services.AddSingleton<IAmazonS3>(sp =>
-            {
-                var config = new AmazonS3Config
-                {
-                    ServiceURL = storageConfig["ServiceUrl"],
-                    ForcePathStyle = true 
-                };
-                return new AmazonS3Client(
-                    storageConfig["AccessKey"],
-                    storageConfig["SecretKey"],config);
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DocShare"));
             });
             builder.Services.AddScoped<IUsers,UsersRepo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -139,7 +121,27 @@ namespace API
             builder.Services.AddScoped<IGoogleAuthService,GoogleAuthService>();
             builder.Services.AddScoped<IDocuments,DocumentsRepo>();
             builder.Services.AddScoped<ITags, TagRepo>();
+            builder.Services.AddScoped<IUserActivity, UserActivity>();
+            // Services
+            builder.Services.AddDefaultAWSOptions(new Amazon.Extensions.NETCore.Setup.AWSOptions
+            {
+                Credentials = new Amazon.Runtime.BasicAWSCredentials(
+                    storageConfig["AccessKey"],
+                    storageConfig["SecretKey"]),
+                    Region = Amazon.RegionEndpoint.USEast1
+            });
             builder.Services.AddSignalR();
+            builder.Services.AddSingleton<IAmazonS3>(sp =>
+            {
+                var config = new AmazonS3Config
+                {
+                    ServiceURL = storageConfig["ServiceUrl"],
+                    ForcePathStyle = true
+                };
+                return new AmazonS3Client(
+                    storageConfig["AccessKey"],
+                    storageConfig["SecretKey"], config);
+            });
             builder.Services.AddScoped<RabbitMQService>();
             builder.Services.AddScoped<NotificationHub>();
             builder.Services.AddSingleton<ISignalRService, SignalRService>();

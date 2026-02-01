@@ -53,7 +53,7 @@ namespace Infrastructure.Repositories
 
         public async Task<Document?> GetDocByIDAsync(int docId)
         {
-            return await _context.Documents.FirstOrDefaultAsync(e=>e.Id == docId);
+            return await _context.Documents.FirstOrDefaultAsync(e => e.Id == docId);
         }
 
         public async Task<List<ResDocumentDto>> GetDocsByUserIdPagedAsync(int userId, int skip, int take)
@@ -61,7 +61,7 @@ namespace Infrastructure.Repositories
             return await _context.Documents
                 .Where(d => d.UploaderId == userId && d.IsDeleted == 0)
                 .OrderByDescending(d => d.CreatedAt)
-                .Skip(skip).Take(take).Select(d =>new ResDocumentDto
+                .Skip(skip).Take(take).Select(d => new ResDocumentDto
                 {
                     Id = d.Id,
                     SizeInBytes = d.SizeInBytes,
@@ -73,28 +73,30 @@ namespace Infrastructure.Repositories
                 }).ToListAsync();
         }
 
-        public async Task<ResDocumentDto?> GetDocWithUserByUserID(int docID)
+        public async Task<ResDocumentDto?> GetDocWithUserByUserID(int docID, int currentUserId)
         {
-            return await _context.Documents.Where(e => e.Id==docID).Select(d=>new ResDocumentDto
+            return await _context.Documents.Where(e => e.Id == docID).Select(d => new ResDocumentDto
             {
                 Id = d.Id,
-                CreatedAt= d.CreatedAt,
+                CreatedAt = d.CreatedAt,
                 Description = d.Description,
                 FileUrl = d.FileUrl,
                 Title = d.Title,
-                SizeInBytes= d.SizeInBytes,
+                SizeInBytes = d.SizeInBytes,
                 Status = d.Status,
-                AvatarUrl= d.Uploader.AvatarUrl,
+                AvatarUrl = d.Uploader.AvatarUrl,
                 FullName = d.Uploader.FullName,
-                DislikeCount=d.DislikeCount,
-                LikeCount=d.LikeCount,
-                ViewCount=d.ViewCount,
+                DislikeCount = d.DislikeCount,
+                LikeCount = d.LikeCount,
+                ViewCount = d.ViewCount,
+                IsLiked = _context.DocumentVotes.Any(v => v.DocumentId == d.Id && v.UserId == currentUserId && v.IsLike == true) == false ? null : true,
+                IsSaved = _context.SavedDocuments.Any(s => s.DocumentId == d.Id && s.UserId == currentUserId) == false ? null : true
             }).FirstOrDefaultAsync();
         }
 
         public async Task<bool> HasDocument(int docID)
         {
-            return await _context.Documents.AnyAsync(e=>e.Id==docID);
+            return await _context.Documents.AnyAsync(e => e.Id == docID);
         }
     }
 }

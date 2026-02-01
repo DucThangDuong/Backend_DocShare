@@ -154,16 +154,16 @@ namespace API.Controllers
                 {
                     if (string.IsNullOrEmpty(dto.OldPassword))
                     {
-                        return BadRequest("Vui lòng nhập mật khẩu cũ.");
+                        return BadRequest(new { messaage = "Vui lòng nhập mật khẩu cũ." });
                     }
                     bool checkPassword = BCrypt.Net.BCrypt.Verify(dto.OldPassword, currentPasswordHash);
                     if (!checkPassword)
                     {
-                        return BadRequest("Mật khẩu cũ không chính xác.");
+                        return BadRequest(new { message = "Mật khẩu cũ không chính xác." });
                     }
                     if (dto.OldPassword == dto.NewPassword)
                     {
-                        return BadRequest("Mật khẩu mới không được trùng với mật khẩu cũ.");
+                        return BadRequest(new { message = "Mật khẩu mới không được trùng với mật khẩu cũ." });
                     }
                 }
                 else

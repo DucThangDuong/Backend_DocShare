@@ -188,12 +188,19 @@ namespace API.Controllers
         }
         [HttpGet("document/detail/{docid}")]
         public async Task<IActionResult> GetDetailDoc(int docid) {
+
             bool ishas = await _repo.documentsRepo.HasDocument(docid);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            int userId = 0;
+            if (userIdClaim != null)
+            {
+                int.TryParse(userIdClaim.Value, out userId);
+            }
             if (!ishas)
             {
                 return NotFound();
             }
-            ResDocumentDto? result = await _repo.documentsRepo.GetDocWithUserByUserID(docid);
+            ResDocumentDto? result = await _repo.documentsRepo.GetDocWithUserByUserID(docid, userId);
             if (result == null)
             {
                 return NotFound();
@@ -224,7 +231,7 @@ namespace API.Controllers
         {
             if (string.IsNullOrEmpty(fileName)) return fileName;
             const string KeyChars = "áàạảãâấầậẩẫăắằặẳẵÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴéèẹẻẽêếềệểễÉÈẸẺẼÊẾỀỆỂỄóòọỏõôốồộổỗơớờợởỡÓÒỌỎÕÔỐỒỘỔỖƠỚỜỢỞỠúùụủũưứừựửữÚÙỤỦŨƯỨỪỰỬỮíìịỉĩÍÌỊỈĨđĐýỳỵỷỹÝỲỴỶỸ ";
-            const string ReplChars = "aaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAeeeeeeeeeeeEEEEEEEEEEEoooooooooooooooooOOOOOOOOOOOOOOOOOuuuuuuuuuuuUUUUUUUUUUUiiiiiIIIIIdDyyyyyYYYYY_";
+            const string ReplChars ="aaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAeeeeeeeeeeeEEEEEEEEEEEoooooooooooooooooOOOOOOOOOOOOOOOOOuuuuuuuuuuuUUUUUUUUUUUiiiiiIIIIIdDyyyyyYYYYY_";
             StringBuilder sb = new StringBuilder(fileName.Length);
             foreach (char c in fileName)
             {

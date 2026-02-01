@@ -19,18 +19,21 @@ public partial class DocShareContext : DbContext
 
     public virtual DbSet<Document> Documents { get; set; }
 
+    public virtual DbSet<DocumentVote> DocumentVotes { get; set; }
+
+    public virtual DbSet<SavedDocument> SavedDocuments { get; set; }
+
     public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC07E6588E8B");
+            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC072A9EF5E8");
 
-            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6AD6BE599").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6A6633C3F").IsUnique();
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -41,7 +44,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Document>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC07A2D863E0");
+            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC07DC7308A3");
 
             entity.ToTable(tb =>
                 {
@@ -57,9 +60,7 @@ public partial class DocShareContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.DeletedAt).HasColumnType("datetime");
-            entity.Property(e => e.FileUrl)
-                .HasMaxLength(500)
-                .IsUnicode(false);
+            entity.Property(e => e.FileUrl).HasMaxLength(500);
             entity.Property(e => e.IsDeleted).HasDefaultValue((byte)0);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
@@ -91,18 +92,56 @@ public partial class DocShareContext : DbContext
                         .HasConstraintName("FK_DocTags_Doc"),
                     j =>
                     {
-                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920951F72448F");
+                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920951B1323B9");
                         j.ToTable("DocumentTags");
                     });
         });
 
+        modelBuilder.Entity<DocumentVote>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC149F2266");
+
+            entity.ToTable(tb => tb.HasTrigger("trg_UpdateVoteCounts"));
+
+            entity.Property(e => e.VotedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Document).WithMany(p => p.DocumentVotes)
+                .HasForeignKey(d => d.DocumentId)
+                .HasConstraintName("FK_Votes_Doc");
+
+            entity.HasOne(d => d.User).WithMany(p => p.DocumentVotes)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Votes_User");
+        });
+
+        modelBuilder.Entity<SavedDocument>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BC67AF32E8");
+
+            entity.Property(e => e.SavedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Document).WithMany(p => p.SavedDocuments)
+                .HasForeignKey(d => d.DocumentId)
+                .HasConstraintName("FK_Saved_Doc");
+
+            entity.HasOne(d => d.User).WithMany(p => p.SavedDocuments)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Saved_User");
+        });
+
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC0766F29A61");
+            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC07EAAB68DC");
 
             entity.HasIndex(e => e.Slug, "IX_Tags_Slug");
 
-            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB62AB80CE4").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB6B2A1F029").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
             entity.Property(e => e.Slug)
@@ -112,15 +151,16 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC078467ECFA");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC073EB8FA26");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E472DE89C5").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E46415C233").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D105345E2DBB24").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534589A88EC").IsUnique();
 
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(false)
+                .HasDefaultValue("default-avatar.jpg");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");

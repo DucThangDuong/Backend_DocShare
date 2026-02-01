@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 namespace Domain.Entities;
 
 public partial class Document
@@ -36,6 +35,10 @@ public partial class Document
     public int DislikeCount { get; set; }
 
     public virtual Category? Category { get; set; }
+
+    public virtual ICollection<DocumentVote> DocumentVotes { get; set; } = new List<DocumentVote>();
+
+    public virtual ICollection<SavedDocument> SavedDocuments { get; set; } = new List<SavedDocument>();
 
     public virtual User Uploader { get; set; } = null!;
 

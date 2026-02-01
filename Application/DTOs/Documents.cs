@@ -20,6 +20,8 @@ namespace Application.DTOs
         public int? ViewCount { get; set; }
         public int? LikeCount { get; set; }
         public int? DislikeCount { get; set; }
+        public bool? IsLiked { get; set; } 
+        public bool? IsSaved { get; set; }
     }
     public class ResUserStorageFileDto
     {

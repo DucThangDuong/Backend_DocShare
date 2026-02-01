@@ -15,7 +15,7 @@ namespace Application.Interfaces
         public Task<int> CountTrashByUserID(int UserID);
         public Task<List<ResDocumentDto>> GetDocsByUserIdPagedAsync(int userId, int skip, int take);
         public Task<Document?> GetDocByIDAsync(int docId);
-        public Task<ResDocumentDto?> GetDocWithUserByUserID(int docID);
+        public Task<ResDocumentDto?> GetDocWithUserByUserID(int docID,int currentUserId);
         public Task<bool> HasDocument(int docID);
         public Task<bool> MoveToTrash(int docID);
     }
