@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 namespace API.Services
 {
-    public class S3StorageService:IStorageService
+    public class S3StorageService : IStorageService
     {
         private readonly IAmazonS3 _s3Client;
         private readonly string _File_storage;
@@ -38,23 +38,23 @@ namespace API.Services
         public async Task DeleteFileAsync(string fileName, StorageType type)
         {
             string targetBucket = GetBucketName(type);
-            await _s3Client.DeleteObjectAsync(_File_storage, targetBucket);
+            await _s3Client.DeleteObjectAsync(targetBucket, fileName);
         }
         public async Task<bool> FileExistsAsync(string fileName, StorageType type)
         {
             try
             {
                 string targetBucket = GetBucketName(type);
-                await _s3Client.GetObjectMetadataAsync(_File_storage, targetBucket);
-                return true; 
+                await _s3Client.GetObjectMetadataAsync(targetBucket, fileName);
+                return true;
             }
             catch (AmazonS3Exception ex)
             {
                 if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    return false; 
+                    return false;
                 }
-                throw; 
+                throw;
             }
         }
         public async Task<Stream> GetFileStreamAsync(string fileName, StorageType type)

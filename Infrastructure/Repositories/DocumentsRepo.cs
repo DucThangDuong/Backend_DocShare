@@ -75,28 +75,40 @@ namespace Infrastructure.Repositories
 
         public async Task<ResDocumentDto?> GetDocWithUserByUserID(int docID, int currentUserId)
         {
-            return await _context.Documents.Where(e => e.Id == docID).Select(d => new ResDocumentDto
-            {
-                Id = d.Id,
-                CreatedAt = d.CreatedAt,
-                Description = d.Description,
-                FileUrl = d.FileUrl,
-                Title = d.Title,
-                SizeInBytes = d.SizeInBytes,
-                Status = d.Status,
-                AvatarUrl = d.Uploader.AvatarUrl,
-                FullName = d.Uploader.FullName,
-                DislikeCount = d.DislikeCount,
-                LikeCount = d.LikeCount,
-                ViewCount = d.ViewCount,
-                IsLiked = _context.DocumentVotes.Any(v => v.DocumentId == d.Id && v.UserId == currentUserId && v.IsLike == true) == false ? null : true,
-                IsSaved = _context.SavedDocuments.Any(s => s.DocumentId == d.Id && s.UserId == currentUserId) == false ? null : true
-            }).FirstOrDefaultAsync();
+            var query = _context.Documents
+                .Where(e => e.Id == docID)
+                .Select(d => new ResDocumentDto
+                {
+                    Id = d.Id,
+                    CreatedAt = d.CreatedAt,
+                    Description = d.Description,
+                    FileUrl = d.FileUrl,
+                    Title = d.Title,
+                    SizeInBytes = d.SizeInBytes,
+                    Status = d.Status,
+                    AvatarUrl = d.Uploader.AvatarUrl,
+                    FullName = d.Uploader.FullName,
+                    DislikeCount = d.DislikeCount,
+                    LikeCount = d.LikeCount,
+                    ViewCount = d.ViewCount,
+                    IsLiked = _context.DocumentVotes
+                                .Where(v => v.DocumentId == d.Id && v.UserId == currentUserId)
+                                .Select(v => (bool?)v.IsLike).FirstOrDefault(),
+                    IsSaved = _context.SavedDocuments.Any(s => s.DocumentId == d.Id && s.UserId == currentUserId)
+                });
+            return await query.FirstOrDefaultAsync();
         }
 
         public async Task<bool> HasDocument(int docID)
         {
             return await _context.Documents.AnyAsync(e => e.Id == docID);
+        }
+
+        public async Task<bool> UpdateAsync(Document document)
+        {
+            _context.Documents.Update(document);
+            var result = await _context.SaveChangesAsync();
+            return result > 0;
         }
     }
 }
