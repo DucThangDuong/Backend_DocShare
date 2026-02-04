@@ -9,7 +9,9 @@ namespace Application.Interfaces
 {
     public interface ITags
     {
-        public Task<Tag?> HasTag(string Slug,string tag);
+        public Task<Tag?> HasTag( string tagSlug, string tag);
         public Task Create(Tag tag);
+        public Task<List<string>?> GetTagOfDocument(int docid);
+        public Task RemoveAllTagsByDocIdAsync(int docId);
     }
 }

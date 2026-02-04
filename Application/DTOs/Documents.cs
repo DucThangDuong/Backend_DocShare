@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,6 +23,7 @@ namespace Application.DTOs
         public int? DislikeCount { get; set; }
         public bool? IsLiked { get; set; } 
         public bool? IsSaved { get; set; }
+        public List<string>? Tags { get; set; }
     }
     public class ResUserStorageFileDto
     {

@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace API.Helpers
+namespace API.Extensions
 {
     public class StringHelpers
     {

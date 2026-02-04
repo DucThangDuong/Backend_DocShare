@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client.Extensibility;
 using System.Security.Claims;
+using API.Extensions;
 
 namespace API.Controllers
 {
@@ -104,7 +105,7 @@ namespace API.Controllers
             {
                 return StatusCode(500, new
                 {
-                    error = "Loi khi them du lieu"
+                    message = "Loi khi them du lieu"
                 });
             }
             return Created();
@@ -174,10 +175,10 @@ namespace API.Controllers
         public async Task<IActionResult> Logout()
         {
             Response.Cookies.Delete("refreshToken");
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId != null)
+            int userId = User.GetUserId();
+            if (userId != 0)
             {
-                await _repo.usersRepo.RevokeRefreshTokenAsync(int.Parse(userId));
+                await _repo.usersRepo.RevokeRefreshTokenAsync(userId);
             }
             return Ok(new { message = "Đăng xuất thành công" });
         }

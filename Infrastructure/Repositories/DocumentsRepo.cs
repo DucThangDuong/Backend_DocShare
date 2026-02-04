@@ -94,7 +94,8 @@ namespace Infrastructure.Repositories
                     IsLiked = _context.DocumentVotes
                                 .Where(v => v.DocumentId == d.Id && v.UserId == currentUserId)
                                 .Select(v => (bool?)v.IsLike).FirstOrDefault(),
-                    IsSaved = _context.SavedDocuments.Any(s => s.DocumentId == d.Id && s.UserId == currentUserId)
+                    IsSaved = _context.SavedDocuments.Any(s => s.DocumentId == d.Id && s.UserId == currentUserId),
+                    Tags = d.Tags.Select(e => e.Name).ToList()
                 });
             return await query.FirstOrDefaultAsync();
         }
@@ -106,9 +107,15 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> UpdateAsync(Document document)
         {
-            _context.Documents.Update(document);
-            var result = await _context.SaveChangesAsync();
-            return result > 0;
+            try
+            {
+                _context.Documents.Update(document);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
     }
 }

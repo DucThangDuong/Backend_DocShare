@@ -1,4 +1,5 @@
 ﻿using API.DTOs;
+using API.Extensions;
 using Application.DTOs;
 using Application.Interfaces;
 using Application.IServices;
@@ -23,19 +24,12 @@ namespace API.Controllers
         [Authorize]
         public async Task<IActionResult> FileDoc()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || string.IsNullOrEmpty(userIdClaim.Value))
-            {
-                return Unauthorized("Token không hợp lệ hoặc thiếu thông tin định danh.");
-            }
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return BadRequest("UserId trong Token không đúng định dạng.");
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
             ResUserStorageFileDto? userStorageInfo = await _repo.usersRepo.GetUserStorageStatsAsync(userId);
             if (userStorageInfo == null)
             {
-                return NotFound("Không tìm thấy thông tin người dùng.");
+                return NotFound(new { message = "Không tìm thấy thông tin người dùng." });
             }
             return Ok(userStorageInfo);
         }
@@ -43,19 +37,12 @@ namespace API.Controllers
         [Authorize]
         public async Task<IActionResult> PrivateProfile()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || string.IsNullOrEmpty(userIdClaim.Value))
-            {
-                return Unauthorized("Token không hợp lệ hoặc thiếu thông tin định danh.");
-            }
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return BadRequest("UserId trong Token không đúng định dạng.");
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
             ResUserPrivate? userPrivateProfile = await _repo.usersRepo.GetUserPrivateProfileAsync(userId);
             if (userPrivateProfile == null)
             {
-                return NotFound("Không tìm thấy thông tin người dùng.");
+                return NotFound(new { message = "Không tìm thấy thông tin người dùng." });
             }
             return Ok(userPrivateProfile);
         }
@@ -63,20 +50,13 @@ namespace API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdatePrivateProfile(ReqUserUpdateDto reqUserUpdateDto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || string.IsNullOrEmpty(userIdClaim.Value))
-            {
-                return Unauthorized("Token không hợp lệ hoặc thiếu thông tin định danh.");
-            }
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return BadRequest("UserId trong Token không đúng định dạng.");
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
             bool updateResult = await _repo.usersRepo.UpdateUserProfile(userId, reqUserUpdateDto.Email, reqUserUpdateDto.Password
                 , reqUserUpdateDto.FullName);
             if (!updateResult)
             {
-                return BadRequest("Cập nhật thông tin người dùng thất bại.");
+                return BadRequest(new { message = "Cập nhật thông tin người dùng thất bại." });
             }
             return NoContent();
         }
@@ -84,16 +64,9 @@ namespace API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateAvatar(IFormFile avatar)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            int userId = User.GetUserId();
             string? avatarFileName = null;
-            if (userIdClaim == null || string.IsNullOrEmpty(userIdClaim.Value))
-            {
-                return Unauthorized("Token không hợp lệ hoặc thiếu thông tin định danh.");
-            }
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return BadRequest("UserId trong Token không đúng định dạng.");
-            }
+            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
             if (avatar != null && avatar.Length > 0)
             {
                 var ext = Path.GetExtension(avatar.FileName);
@@ -101,12 +74,12 @@ namespace API.Controllers
                 using var stream = avatar.OpenReadStream();
                 await _s3storage.UploadFileAsync(stream, avatarFileName, avatar.ContentType, StorageType.Avatar);
                 bool updateResult = await _repo.usersRepo.UpdateUserAvatar(userId, avatarFileName);
-                if (!updateResult)
+                if (updateResult)
                 {
                     return NoContent();
                 }
             }
-            return BadRequest("Cập nhật thông tin người dùng thất bại.");
+            return BadRequest(new { message = "Cập nhật thông tin người dùng thất bại." });
         }
         [HttpPatch("user/update/username")]
         [Authorize]
@@ -114,26 +87,19 @@ namespace API.Controllers
         {
             if (dto == null)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Dữ liệu không hợp lệ." });
             }
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || string.IsNullOrEmpty(userIdClaim.Value))
-            {
-                return Unauthorized("Token không hợp lệ hoặc thiếu thông tin định danh.");
-            }
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return BadRequest("UserId trong Token không đúng định dạng.");
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
             bool ishas = await _repo.usersRepo.ExistUserNameAsync(dto.Username);
             if (ishas)
             {
-                return Conflict();
+                return Conflict(new { message = "Username đã tồn tại." });
             }
             var result = await _repo.usersRepo.UpdateUserNameAsync(dto.Username, userId);
             if (!result)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Cập nhật username thất bại." });
             }
             return NoContent();
         }
@@ -142,11 +108,8 @@ namespace API.Controllers
         public async Task<IActionResult> UpdatePassword([FromBody] ReqUpdatePasswordDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized("Không xác định được danh tính người dùng.");
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
                 string? currentPasswordHash = await _repo.usersRepo.GetPasswordByUserId(userId);
@@ -154,7 +117,7 @@ namespace API.Controllers
                 {
                     if (string.IsNullOrEmpty(dto.OldPassword))
                     {
-                        return BadRequest(new { messaage = "Vui lòng nhập mật khẩu cũ." });
+                        return BadRequest(new { message = "Vui lòng nhập mật khẩu cũ." });
                     }
                     bool checkPassword = BCrypt.Net.BCrypt.Verify(dto.OldPassword, currentPasswordHash);
                     if (!checkPassword)
@@ -171,12 +134,12 @@ namespace API.Controllers
                 }
                 string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
                 bool result = await _repo.usersRepo.UpdateUserPassword(newPasswordHash, userId);
-                if (!result) return StatusCode(500, "Lỗi cập nhật cơ sở dữ liệu.");
-                return Ok(new { Message = "Cập nhật mật khẩu thành công." });
+                if (!result) return StatusCode(500, new { message = "Lỗi cập nhật cơ sở dữ liệu." });
+                return Ok(new { message = "Cập nhật mật khẩu thành công." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Lỗi server nội bộ.");
+                return StatusCode(500, new { message = "Lỗi server nội bộ." });
             }
         }
     }

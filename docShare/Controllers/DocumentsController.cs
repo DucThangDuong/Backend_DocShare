@@ -1,5 +1,4 @@
 ﻿using API.DTOs;
-using API.Helpers;
 using API.Services;
 using Application.DTOs;
 using Application.Interfaces;
@@ -11,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using API.Extensions;
 namespace API.Controllers
 {
     [Route("api")]
@@ -33,20 +33,12 @@ namespace API.Controllers
         public async Task<IActionResult> CheckDocument([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
-                return BadRequest("Vui lòng chọn file.");
+                return BadRequest(new { message = "Vui lòng chọn file." });
             if (Path.GetExtension(dto.File.FileName).ToLower() != ".pdf")
-                return BadRequest("Chỉ chấp nhận file PDF.");
+                return BadRequest(new { message = "Chỉ chấp nhận file PDF." });
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            int userId = 0;
-            if (userIdClaim != null)
-            {
-                int.TryParse(userIdClaim.Value, out userId);
-            }
-            if (userId == 0)
-            {
-                return Unauthorized();
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
                 string s3ObjectKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
@@ -68,7 +60,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Lỗi server: {ex.Message}");
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
 
@@ -77,22 +69,14 @@ namespace API.Controllers
         public async Task<IActionResult> UploadDocument([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
-                return BadRequest("Vui lòng chọn file.");
+                return BadRequest(new { message = "Vui lòng chọn file." });
 
             if (Path.GetExtension(dto.File.FileName).ToLower() != ".pdf")
-                return BadRequest("Chỉ chấp nhận file PDF.");
+                return BadRequest(new { message = "Chỉ chấp nhận file PDF." });
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                int userId=0;
-                if (userIdClaim != null)
-                {
-                    int.TryParse(userIdClaim.Value, out userId);
-                }
-                if (userId == 0)
-                {
-                    return Unauthorized();
-                }
+                int userId = User.GetUserId();
+                if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
                 string s3ObjectKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
                 bool isExist = await _storageService.FileExistsAsync(s3ObjectKey, StorageType.Document);
                 if (isExist)
@@ -151,7 +135,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Lỗi server: {ex.Message}");
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
         [HttpGet("documents")]
@@ -159,11 +143,8 @@ namespace API.Controllers
         public async Task<IActionResult> GetInforDoc([FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
             if (take > 50) { take = 50; }
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized();
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
                 List<ResDocumentDto> response = await _repo.documentsRepo.GetDocsByUserIdPagedAsync(userId, skip, take);
@@ -172,7 +153,7 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 Console.Error.WriteLine(ex);
-                return BadRequest("Có lỗi xảy ra khi tải dữ liệu.");
+                return BadRequest(new { message = "Có lỗi xảy ra khi tải dữ liệu." });
             }
         }
         [HttpGet("document/download/{docid}")]
@@ -181,12 +162,12 @@ namespace API.Controllers
             Document? document = await _repo.documentsRepo.GetDocByIDAsync(docid);
             if (document == null)
             {
-                return NotFound("Không tìm thấy thông tin tài liệu trong database.");
+                return NotFound(new { message = "Không tìm thấy thông tin tài liệu trong database." });
             }
             bool fileExists = await _storageService.FileExistsAsync($"{document.FileUrl}", StorageType.Document);
             if (!fileExists)
             {
-                return NotFound("Tệp tin không tồn tại trên hệ thống lưu trữ đám mây.");
+                return NotFound(new { message = "Tệp tin không tồn tại trên hệ thống lưu trữ đám mây." });
             }
             var s3Stream = await _storageService.GetFileStreamAsync(document.FileUrl, StorageType.Document);
             return File(s3Stream, "application/pdf", $"{document.Title}");
@@ -196,19 +177,16 @@ namespace API.Controllers
         {
 
             bool ishas = await _repo.documentsRepo.HasDocument(docid);
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized();
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             if (!ishas)
             {
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
             ResDocumentDto? result = await _repo.documentsRepo.GetDocWithUserByUserID(docid, userId);
             if (result == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
             return Ok(result);
 
@@ -219,31 +197,27 @@ namespace API.Controllers
             bool ishas = await _repo.documentsRepo.HasDocument(docid);
             if (!ishas)
             {
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
             if (isdelete.isDeleted == false)
             {
-                return BadRequest("Yêu cầu không hợp lệ.");
+                return BadRequest(new { message = "Yêu cầu không hợp lệ." });
             }
             bool isupdate = await _repo.documentsRepo.MoveToTrash(docid);
             if (isupdate)
             {
                 return NoContent();
             }
-            return BadRequest("Lỗi khi cập nhật dữ liệu.");
+            return BadRequest(new { message = "Lỗi khi cập nhật dữ liệu." });
         }
-
         [Authorize]
         [HttpPatch("document/{docid}")]
         public async Task<IActionResult> UpdateDocument(int docid, [FromBody] ReqUpdateDocumentDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized();
-            }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             var document = await _repo.documentsRepo.GetDocByIDAsync(docid);
-            if (document == null) return NotFound("Tài liệu không tồn tại.");
+            if (document == null) return NotFound(new { message = "Tài liệu không tồn tại." });
             if (document.UploaderId != userId) return Forbid();
 
             bool isChanged = false;
@@ -278,23 +252,53 @@ namespace API.Controllers
                 document.SizeInBytes = dto.File.Length;
                 isChanged = true;
             }
+            if (dto.Tags == null)
+            {
+                await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
+                isChanged = true;
+
+            }
+            else
+            {
+                await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
+                foreach (var tagName in dto.Tags)
+                {
+                    string tagSlug = StringHelpers.GenerateSlug(tagName);
+                    var existingTag = await _repo.tagsRepo.HasTag(tagSlug, tagName);
+
+                    if (existingTag != null)
+                    {
+                        document.Tags.Add(existingTag);
+                    }
+                    else
+                    {
+                        var newTag = new Tag
+                        {
+                            Name = tagName,
+                            Slug = tagSlug
+                        };
+                        document.Tags.Add(newTag);
+                    }
+                }
+                isChanged = true;
+            }
             if (isChanged)
             {
                 try
                 {
-                    document.UpdatedAt = DateTime.Now;
+                    document.UpdatedAt = DateTime.UtcNow;
                     var result = await _repo.documentsRepo.UpdateAsync(document);
-                    if (!result) return BadRequest("Lỗi khi cập nhật cơ sở dữ liệu.");
-
+                    if (!result) return BadRequest(new { message = "Lỗi khi cập nhật cơ sở dữ liệu." });
+                    await _repo.SaveAllAsync();
                     return NoContent();
                 }
                 catch (Exception ex)
                 {
-                    return BadRequest(ex.Message);
+                    return BadRequest(new { message = ex.Message });
                 }
             }
 
-            return Ok(new { Message = "Không có gì thay đổi." });
+            return Ok(new { message = "Không có gì thay đổi." });
         }
     }
 }

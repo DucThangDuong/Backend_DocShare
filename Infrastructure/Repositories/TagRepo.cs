@@ -23,9 +23,31 @@ namespace Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Tag?> HasTag(string Slug, string tag)
+        public async Task RemoveAllTagsByDocIdAsync(int docId)
         {
-            return await _context.Tags.FirstOrDefaultAsync(e=>e.Slug==Slug && e.Name==tag);
+            var document = await _context.Documents
+                                         .Include(d => d.Tags)
+                                         .FirstOrDefaultAsync(d => d.Id == docId);
+
+            if (document != null)
+            {
+                document.Tags.Clear();
+            }
         }
+
+        public async Task<List<string>?> GetTagOfDocument(int docid)
+        {
+            return await _context.Documents
+                    .Where(d => d.Id == docid)
+                    .SelectMany(d => d.Tags.Select(t => t.Name)) 
+                    .ToListAsync();
+        }
+
+        public async Task<Tag?> HasTag(string tagSlug, string tag)
+        {
+            return await _context.Tags.FirstOrDefaultAsync(e=> e.Name==tag && e.Slug==tagSlug);
+        }
+
+
     }
 }
