@@ -6,6 +6,7 @@ using Application.IServices;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
@@ -66,6 +67,7 @@ namespace API.Controllers
 
         [HttpPost("document")]
         [Authorize]
+        [EnableRateLimiting("upload_limit")]
         public async Task<IActionResult> UploadDocument([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
@@ -140,6 +142,7 @@ namespace API.Controllers
         }
         [HttpGet("documents")]
         [Authorize]
+        [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> GetInforDoc([FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
             if (take > 50) { take = 50; }
@@ -157,6 +160,7 @@ namespace API.Controllers
             }
         }
         [HttpGet("document/download/{docid}")]
+        [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> GetPdf(int docid)
         {
             Document? document = await _repo.documentsRepo.GetDocByIDAsync(docid);
@@ -173,6 +177,7 @@ namespace API.Controllers
             return File(s3Stream, "application/pdf", $"{document.Title}");
         }
         [HttpGet("document/detail/{docid}")]
+        [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> GetDetailDoc(int docid)
         {
 
@@ -192,6 +197,8 @@ namespace API.Controllers
 
         }
         [HttpPatch("document/movetotrash/{docid}")]
+        [Authorize]
+        [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> MoveToTrash(int docid, [FromBody] ReqMoveToTrashDTO isdelete)
         {
             bool ishas = await _repo.documentsRepo.HasDocument(docid);
@@ -212,7 +219,8 @@ namespace API.Controllers
         }
         [Authorize]
         [HttpPatch("document/{docid}")]
-        public async Task<IActionResult> UpdateDocument(int docid, [FromBody] ReqUpdateDocumentDto dto)
+        [EnableRateLimiting("upload_limit")]
+        public async Task<IActionResult> UpdateDocument(int docid, [FromForm] ReqUpdateDocumentDto dto)
         {
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
@@ -242,7 +250,10 @@ namespace API.Controllers
             }
             if (dto.File != null && dto.File.Length > 0)
             {
-                await _storageService.DeleteFileAsync(document.FileUrl, StorageType.Document);
+                if (!string.IsNullOrEmpty(document.FileUrl))
+                {
+                    await _storageService.DeleteFileAsync(document.FileUrl, StorageType.Document);
+                }
                 string newKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
                 using (var stream = dto.File.OpenReadStream())
                 {
@@ -299,6 +310,31 @@ namespace API.Controllers
             }
 
             return Ok(new { message = "Không có gì thay đổi." });
+        }
+        [Authorize]
+        [HttpDelete("document/{docid}/fileUrl")]
+        public async Task<IActionResult> DeleteDocumentFileUrl(int docid)
+        {
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            try
+            {
+
+                bool result = await _repo.documentsRepo.DeleteFileUrl(docid);
+                if (result)
+                {
+                    await _repo.SaveAllAsync();
+                    return NoContent();
+                }
+                else
+                {
+                    return NotFound(new {message="Không timf thấy tài liệu"});
+                }
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
     }
 }

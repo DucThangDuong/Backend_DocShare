@@ -5,6 +5,7 @@ using Application.Interfaces;
 using Application.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace API.Controllers
@@ -22,6 +23,7 @@ namespace API.Controllers
         }
         [HttpGet("user/filedocs")]
         [Authorize]
+        [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> FileDoc()
         {
             int userId = User.GetUserId();
@@ -35,6 +37,7 @@ namespace API.Controllers
         }
         [HttpGet("user/privateprofile")]
         [Authorize]
+        [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> PrivateProfile()
         {
             int userId = User.GetUserId();
@@ -48,6 +51,7 @@ namespace API.Controllers
         }
         [HttpPatch("user/update/profile")]
         [Authorize]
+        [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> UpdatePrivateProfile(ReqUserUpdateDto reqUserUpdateDto)
         {
             int userId = User.GetUserId();
@@ -58,10 +62,14 @@ namespace API.Controllers
             {
                 return BadRequest(new { message = "Cập nhật thông tin người dùng thất bại." });
             }
-            return NoContent();
+            var updatedProfile = await _repo.usersRepo.GetUserPrivateProfileAsync(userId);
+            return Ok(new { 
+                data = updatedProfile 
+            });
         }
         [HttpPatch("user/update/avatar")]
         [Authorize]
+        [EnableRateLimiting("upload_limit")]
         public async Task<IActionResult> UpdateAvatar(IFormFile avatar)
         {
             int userId = User.GetUserId();
@@ -76,16 +84,17 @@ namespace API.Controllers
                 bool updateResult = await _repo.usersRepo.UpdateUserAvatar(userId, avatarFileName);
                 if (updateResult)
                 {
-                    return NoContent();
+                    return Ok(new { data = avatarFileName });
                 }
             }
             return BadRequest(new { message = "Cập nhật thông tin người dùng thất bại." });
         }
         [HttpPatch("user/update/username")]
         [Authorize]
+        [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> UpdateUsername(ReqUpdateUserNameDto dto)
         {
-            if (dto == null)
+            if (dto == null || string.IsNullOrEmpty(dto.Username))
             {
                 return BadRequest(new { message = "Dữ liệu không hợp lệ." });
             }
@@ -101,10 +110,11 @@ namespace API.Controllers
             {
                 return BadRequest(new { message = "Cập nhật username thất bại." });
             }
-            return NoContent();
+            return Ok(new { date = dto.Username });
         }
         [HttpPatch("user/update/password")]
         [Authorize]
+        [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> UpdatePassword([FromBody] ReqUpdatePasswordDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -132,10 +142,9 @@ namespace API.Controllers
                 else
                 {
                 }
-                string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-                bool result = await _repo.usersRepo.UpdateUserPassword(newPasswordHash, userId);
+                bool result = await _repo.usersRepo.UpdateUserPassword(dto.NewPassword, userId);
                 if (!result) return StatusCode(500, new { message = "Lỗi cập nhật cơ sở dữ liệu." });
-                return Ok(new { message = "Cập nhật mật khẩu thành công." });
+                return NoContent();
             }
             catch (Exception ex)
             {

@@ -1,19 +1,13 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
-using Azure.Core;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Threading.Tasks;
+
 namespace Infrastructure.Repositories
 {
     public class UsersRepo : IUsers
     {
-        DocShareContext _context;
+        private readonly DocShareContext _context;
         public UsersRepo(DocShareContext context)
         {
             _context = context;
@@ -36,22 +30,22 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> ExistEmailAsync(string email)
         {
-            return await _context.Users.AnyAsync(e => e.Email == email);
+            return await _context.Users.AsNoTracking().AnyAsync(e => e.Email == email);
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _context.Users.FirstOrDefaultAsync(e => e.Email == email);
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.Email == email);
         }
 
         public async Task<User?> GetUserAsync(int id)
         {
-            return await _context.Users.FirstOrDefaultAsync(e => e.Id == id);
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
         }
 
         public async Task<User?> GetUserByRefreshTokenAsync(string refreshToken)
         {
-            return await _context.Users.FirstOrDefaultAsync(e => e.RefreshToken == refreshToken);
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.RefreshToken == refreshToken);
         }
 
         public async Task RevokeRefreshTokenAsync(int userId)
@@ -132,18 +126,27 @@ namespace Infrastructure.Repositories
         }
         public async Task<bool> UpdateUserAvatar(int userId, string avatarFileName)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                {
+                    return false;
+                }
+                user.AvatarUrl = avatarFileName;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
             {
                 return false;
             }
-            user.AvatarUrl = avatarFileName;
-            return await _context.SaveChangesAsync() > 0;
+
         }
 
         public async Task<bool> ExistUserNameAsync(string username)
         {
-            return await _context.Users.AnyAsync(e=>e.Username == username);
+            return await _context.Users.AsNoTracking().AnyAsync(e => e.Username == username);
         }
 
         public async Task<bool> UpdateUserNameAsync(string username, int userId)
@@ -159,12 +162,12 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> UpdateUserPassword(string newPassword, int userId)
         {
-            var user= await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
+            var user = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
             if (user == null)
             {
                 return false;
             }
-            user.PasswordHash = newPassword;
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
             return await _context.SaveChangesAsync() > 0;
         }
 

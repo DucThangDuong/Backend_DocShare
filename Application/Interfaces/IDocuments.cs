@@ -19,5 +19,6 @@ namespace Application.Interfaces
         public Task<bool> HasDocument(int docID);
         public Task<bool> MoveToTrash(int docID);
         public Task<bool> UpdateAsync(Document document);
+        public Task<bool> DeleteFileUrl(int docid);
     }
 }

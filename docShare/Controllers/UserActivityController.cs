@@ -23,12 +23,13 @@ namespace API.Controllers
         public async Task<IActionResult> VoteDocument(int docId, [FromBody] ReqVoteDto dto)
         {
             int userId = User.GetUserId();
-           if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             var result = await _repo.userActivityRepo.VoteDocumentAsync(userId, docId, dto.IsLike);
 
             if (result) return Ok(new { message = "Đã ghi nhận tương tác." });
             return BadRequest(new { message = "Không thể thực hiện thao tác." });
         }
+        [EnableRateLimiting("export_file_light")]
         [HttpPost("save/{docId}")]
         public async Task<IActionResult> ToggleSaveDocument(int docId)
         {
@@ -41,6 +42,7 @@ namespace API.Controllers
             }
             return Ok(new { message = "Lưu tài liệu thành công" });
         }
+        [EnableRateLimiting("read_limit")]
         [HttpGet("saved-library")]
         public async Task<IActionResult> GetMySavedDocuments()
         {

@@ -2,24 +2,27 @@
 using Amazon.S3.Model;
 using Application.DTOs;
 using Application.IServices;
-using System.Text;
-using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+
 namespace API.Services
 {
     public class S3StorageService : IStorageService
     {
         private readonly IAmazonS3 _s3Client;
-        private readonly string _File_storage;
+        private readonly ILogger<S3StorageService> _logger;
+        private readonly string _fileStorage;
         private readonly string _avatarBucket;
-        public S3StorageService(IAmazonS3 s3Client, IConfiguration config)
+
+        public S3StorageService(IAmazonS3 s3Client, IConfiguration config, ILogger<S3StorageService> logger)
         {
             _s3Client = s3Client;
-            _File_storage = config["Storage:File_storage"] ?? "";
+            _logger = logger;
+            _fileStorage = config["Storage:File_storage"] ?? "";
             _avatarBucket = config["Storage:Avatar_storage"] ?? "";
         }
         private string GetBucketName(StorageType type)
         {
-            return type == StorageType.Avatar ? _avatarBucket : _File_storage;
+            return type == StorageType.Avatar ? _avatarBucket : _fileStorage;
         }
         public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, StorageType type)
         {
@@ -33,7 +36,7 @@ namespace API.Services
             };
 
             await _s3Client.PutObjectAsync(request);
-            return $"{_s3Client.Config.ServiceURL}/{_File_storage}/{fileName}";
+            return $"{_s3Client.Config.ServiceURL}/{_fileStorage}/{fileName}";
         }
         public async Task DeleteFileAsync(string fileName, StorageType type)
         {
@@ -73,7 +76,8 @@ namespace API.Services
             }
             catch (AmazonS3Exception ex)
             {
-                throw new Exception($"Không thể tải file từ S3: {fileName}. Lỗi: {ex.Message}");
+                _logger.LogError(ex, "Failed to get file from S3: {FileName}", fileName);
+                throw new Exception("Không thể tải file. Vui lòng thử lại sau.");
             }
         }
     }

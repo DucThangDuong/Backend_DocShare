@@ -10,7 +10,7 @@ namespace Infrastructure.Repositories
 {
     public class UserActivity : IUserActivity
     {
-        public readonly DocShareContext _context;
+        private readonly DocShareContext _context;
         public UserActivity(DocShareContext context)
         {
             _context = context;
@@ -36,7 +36,7 @@ namespace Infrastructure.Repositories
                     existingVote.VotedAt = DateTime.Now;
                 }
             }
-            else
+            else if (isLike.HasValue)
             {
                 var newVote = new DocumentVote
                 {
@@ -52,19 +52,12 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> ToggleSaveDocumentAsync(int userId, int docId)
         {
-
             var savedDoc = await _context.SavedDocuments
                                          .FirstOrDefaultAsync(s => s.UserId == userId && s.DocumentId == docId);
-            if (savedDoc == null)
-            {
-                return false;
-            }
 
             if (savedDoc != null)
             {
                 _context.SavedDocuments.Remove(savedDoc);
-                await _context.SaveChangesAsync();
-                return true;
             }
             else
             {
@@ -75,14 +68,13 @@ namespace Infrastructure.Repositories
                     SavedAt = DateTime.Now,
                 };
                 _context.SavedDocuments.Add(newSave);
-                await _context.SaveChangesAsync();
-                return true;
             }
+            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<List<Document>> GetSavedDocumentsByUserAsync(int userId)
         {
-            return await _context.SavedDocuments.Where(s => s.UserId == userId)
+            return await _context.SavedDocuments.AsNoTracking().Where(s => s.UserId == userId)
                            .Include(s => s.Document).Select(s => s.Document).ToListAsync();
         }
     }

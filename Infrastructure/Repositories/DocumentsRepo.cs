@@ -19,12 +19,12 @@ namespace Infrastructure.Repositories
 
         public async Task<int> CountDocByUserID(int UserID)
         {
-            return await _context.Documents.CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 0);
+            return await _context.Documents.AsNoTracking().CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 0);
         }
 
         public async Task<int> CountTrashByUserID(int UserID)
         {
-            return await _context.Documents.CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 1);
+            return await _context.Documents.AsNoTracking().CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 1);
         }
 
         public async Task<bool> CreateAsync(Document document)
@@ -59,6 +59,7 @@ namespace Infrastructure.Repositories
         public async Task<List<ResDocumentDto>> GetDocsByUserIdPagedAsync(int userId, int skip, int take)
         {
             return await _context.Documents
+                .AsNoTracking()
                 .Where(d => d.UploaderId == userId && d.IsDeleted == 0)
                 .OrderByDescending(d => d.CreatedAt)
                 .Skip(skip).Take(take).Select(d => new ResDocumentDto
@@ -76,6 +77,7 @@ namespace Infrastructure.Repositories
         public async Task<ResDocumentDto?> GetDocWithUserByUserID(int docID, int currentUserId)
         {
             var query = _context.Documents
+                .AsNoTracking()
                 .Where(e => e.Id == docID)
                 .Select(d => new ResDocumentDto
                 {
@@ -102,7 +104,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> HasDocument(int docID)
         {
-            return await _context.Documents.AnyAsync(e => e.Id == docID);
+            return await _context.Documents.AsNoTracking().AnyAsync(e => e.Id == docID);
         }
 
         public async Task<bool> UpdateAsync(Document document)
@@ -110,12 +112,23 @@ namespace Infrastructure.Repositories
             try
             {
                 _context.Documents.Update(document);
-                return true;
+                return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex)
+            catch
             {
                 return false;
             }
+        }
+
+        public async Task<bool> DeleteFileUrl(int docid)
+        {
+            var doc = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docid);
+            if (doc == null) {
+                return false;
+            }
+            doc.FileUrl=String.Empty;
+            doc.SizeInBytes = 0;
+            return true;
         }
     }
 }

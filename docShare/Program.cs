@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
+
 namespace API
 {
     public class Program
@@ -51,7 +52,7 @@ namespace API
                             Window = TimeSpan.FromSeconds(30),
                             QueueLimit = 0
                         }));
-                options.AddPolicy("ip_login", httpcontext =>
+                options.AddPolicy("ip_auth", httpcontext =>
                     RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: httpcontext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                         factory: _ => new FixedWindowRateLimiterOptions
@@ -72,6 +73,29 @@ namespace API
                                 QueueLimit = 0
                             }));
 
+                options.AddPolicy("upload_limit", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                            ? httpContext.User.Identity.Name!
+                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 3,
+                                Window = TimeSpan.FromSeconds(60),
+                                QueueLimit = 0
+                            }));
+
+                options.AddPolicy("read_limit", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                            ? httpContext.User.Identity.Name!
+                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 30,
+                                Window = TimeSpan.FromSeconds(30),
+                                QueueLimit = 0
+                            }));
 
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             });
@@ -115,14 +139,20 @@ namespace API
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DocShare"));
             });
-            builder.Services.AddScoped<IUsers,UsersRepo>();
+
+            // Repositories
+            builder.Services.AddScoped<IUsers, UsersRepo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-            builder.Services.AddScoped<IGoogleAuthService,GoogleAuthService>();
-            builder.Services.AddScoped<IDocuments,DocumentsRepo>();
+            builder.Services.AddScoped<IDocuments, DocumentsRepo>();
             builder.Services.AddScoped<ITags, TagRepo>();
             builder.Services.AddScoped<IUserActivity, UserActivity>();
+
             // Services
+            builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+            builder.Services.AddScoped<RabbitMQService>();
+
+            // AWS S3
             builder.Services.AddDefaultAWSOptions(new Amazon.Extensions.NETCore.Setup.AWSOptions
             {
                 Credentials = new Amazon.Runtime.BasicAWSCredentials(
@@ -130,7 +160,7 @@ namespace API
                     storageConfig["SecretKey"]),
                     Region = Amazon.RegionEndpoint.USEast1
             });
-            builder.Services.AddSignalR();
+
             builder.Services.AddSingleton<IAmazonS3>(sp =>
             {
                 var config = new AmazonS3Config
@@ -142,12 +172,17 @@ namespace API
                     storageConfig["AccessKey"],
                     storageConfig["SecretKey"], config);
             });
-            builder.Services.AddScoped<RabbitMQService>();
-            builder.Services.AddScoped<NotificationHub>();
-            builder.Services.AddSingleton<ISignalRService, SignalRService>();
-            builder.Services.AddHostedService<RabbitMQWorker>();
+
+            builder.Services.AddSingleton<IStorageService, S3StorageService>();
+
+            // SignalR
+            builder.Services.AddSignalR();
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
-            builder.Services.AddSingleton<IStorageService,S3StorageService>();
+            builder.Services.AddSingleton<ISignalRService, SignalRService>();
+
+            // Background Services
+            builder.Services.AddHostedService<RabbitMQWorker>();
+
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())
             {

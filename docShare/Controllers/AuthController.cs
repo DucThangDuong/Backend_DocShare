@@ -27,7 +27,7 @@ namespace API.Controllers
             _generateJwtToken = jwttoken;
             _authService = authService;
         }
-        [EnableRateLimiting("ip_login")]
+        [EnableRateLimiting("ip_auth")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] ReqLoginDTo userlogin)
         {
@@ -74,7 +74,7 @@ namespace API.Controllers
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
-        [EnableRateLimiting("ip_login")]
+        [EnableRateLimiting("ip_auth")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] ReqRegisterDto request)
         {
@@ -111,7 +111,7 @@ namespace API.Controllers
             return Created();
         }
         [HttpPost("google-login")]
-        [EnableRateLimiting("ip_login")]
+        [EnableRateLimiting("ip_auth")]
         public async Task<IActionResult> GoogleLogin([FromBody] ReqGoogleLoginDTO model)
         {
             if (string.IsNullOrEmpty(model.IdToken))

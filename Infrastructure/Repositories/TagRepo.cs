@@ -11,7 +11,7 @@ namespace Infrastructure.Repositories
 {
     public class TagRepo : ITags
     {
-        public DocShareContext _context;
+        private readonly DocShareContext _context;
         public TagRepo(DocShareContext context)
         {
             _context = context;
