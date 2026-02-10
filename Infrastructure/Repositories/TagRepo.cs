@@ -17,10 +17,9 @@ namespace Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task Create(Tag tag)
+        public async Task CreateTag(Tag tag)
         {
             await _context.Tags.AddAsync(tag);
-            await _context.SaveChangesAsync();
         }
 
         public async Task RemoveAllTagsByDocIdAsync(int docId)

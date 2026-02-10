@@ -21,7 +21,8 @@ namespace API.Controllers
             _repo = repo;
             _s3storage = s3storage;
         }
-        [HttpGet("user/filedocs")]
+        // get
+        [HttpGet("user/storageDoc")]
         [Authorize]
         [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> FileDoc()
@@ -38,6 +39,7 @@ namespace API.Controllers
         [HttpGet("user/privateprofile")]
         [Authorize]
         [EnableRateLimiting("read_limit")]
+
         public async Task<IActionResult> PrivateProfile()
         {
             int userId = User.GetUserId();
@@ -49,23 +51,31 @@ namespace API.Controllers
             }
             return Ok(userPrivateProfile);
         }
+        //patch
         [HttpPatch("user/update/profile")]
         [Authorize]
         [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> UpdatePrivateProfile(ReqUserUpdateDto reqUserUpdateDto)
         {
-            int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
-            bool updateResult = await _repo.usersRepo.UpdateUserProfile(userId, reqUserUpdateDto.Email, reqUserUpdateDto.Password
-                , reqUserUpdateDto.FullName);
-            if (!updateResult)
+            try
             {
-                return BadRequest(new { message = "Cập nhật thông tin người dùng thất bại." });
+
+                int userId = User.GetUserId();
+                bool ishasuser = await _repo.usersRepo.HasUser(userId);
+                if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
+                await _repo.usersRepo.UpdateUserProfile(userId, reqUserUpdateDto.Email, reqUserUpdateDto.Password
+                    , reqUserUpdateDto.FullName);
+                await _repo.SaveAllAsync();
+                var updatedProfile = await _repo.usersRepo.GetUserPrivateProfileAsync(userId);
+                return Ok(new
+                {
+                    data = updatedProfile
+                });
             }
-            var updatedProfile = await _repo.usersRepo.GetUserPrivateProfileAsync(userId);
-            return Ok(new { 
-                data = updatedProfile 
-            });
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
         }
         [HttpPatch("user/update/avatar")]
         [Authorize]
@@ -74,20 +84,27 @@ namespace API.Controllers
         {
             int userId = User.GetUserId();
             string? avatarFileName = null;
-            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
-            if (avatar != null && avatar.Length > 0)
+            bool ishasuser = await _repo.usersRepo.HasUser(userId);
+            if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
+            try
             {
-                var ext = Path.GetExtension(avatar.FileName);
-                avatarFileName = $"{userId}_{ext}";
-                using var stream = avatar.OpenReadStream();
-                await _s3storage.UploadFileAsync(stream, avatarFileName, avatar.ContentType, StorageType.Avatar);
-                bool updateResult = await _repo.usersRepo.UpdateUserAvatar(userId, avatarFileName);
-                if (updateResult)
+
+                if (avatar != null && avatar.Length > 0)
                 {
+                    var ext = Path.GetExtension(avatar.FileName);
+                    avatarFileName = $"{userId}_{ext}";
+                    using var stream = avatar.OpenReadStream();
+                    await _s3storage.UploadFileAsync(stream, avatarFileName, avatar.ContentType, StorageType.Avatar);
+                    await _repo.usersRepo.UpdateUserAvatar(userId, avatarFileName);
+                    await _repo.SaveAllAsync();
                     return Ok(new { data = avatarFileName });
                 }
+                return BadRequest(new { message = "Cập nhật thông tin người dùng thất bại." });
             }
-            return BadRequest(new { message = "Cập nhật thông tin người dùng thất bại." });
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
         }
         [HttpPatch("user/update/username")]
         [Authorize]
@@ -99,18 +116,24 @@ namespace API.Controllers
                 return BadRequest(new { message = "Dữ liệu không hợp lệ." });
             }
             int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
-            bool ishas = await _repo.usersRepo.ExistUserNameAsync(dto.Username);
-            if (ishas)
+            bool ishasuser = await _repo.usersRepo.HasUser(userId);
+            if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
+            try
             {
-                return Conflict(new { message = "Username đã tồn tại." });
+
+                bool ishasname = await _repo.usersRepo.ExistUserNameAsync(dto.Username);
+                if (ishasname)
+                {
+                    return Conflict(new { message = "Username đã tồn tại." });
+                }
+                await _repo.usersRepo.UpdateUserNameAsync(dto.Username, userId);
+                await _repo.SaveAllAsync();
+                return Ok(new { date = dto.Username });
             }
-            var result = await _repo.usersRepo.UpdateUserNameAsync(dto.Username, userId);
-            if (!result)
+            catch (Exception ex)
             {
-                return BadRequest(new { message = "Cập nhật username thất bại." });
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
-            return Ok(new { date = dto.Username });
         }
         [HttpPatch("user/update/password")]
         [Authorize]
@@ -119,7 +142,8 @@ namespace API.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            bool ishasuser = await _repo.usersRepo.HasUser(userId);
+            if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
                 string? currentPasswordHash = await _repo.usersRepo.GetPasswordByUserId(userId);
@@ -142,8 +166,8 @@ namespace API.Controllers
                 else
                 {
                 }
-                bool result = await _repo.usersRepo.UpdateUserPassword(dto.NewPassword, userId);
-                if (!result) return StatusCode(500, new { message = "Lỗi cập nhật cơ sở dữ liệu." });
+                await _repo.usersRepo.UpdateUserPassword(dto.NewPassword, userId);
+                await _repo.SaveAllAsync();
                 return NoContent();
             }
             catch (Exception ex)

@@ -27,6 +27,7 @@ namespace API.Controllers
             _generateJwtToken = jwttoken;
             _authService = authService;
         }
+        //post
         [EnableRateLimiting("ip_auth")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] ReqLoginDTo userlogin)
@@ -40,26 +41,34 @@ namespace API.Controllers
             {
                 return Unauthorized(new { message = "Tài khoản hoặc mật khẩu không chính xác." });
             }
-            string role = userEntity.Role ?? "User";
-            var accessToken = _generateJwtToken.GenerateAccessToken(userEntity.Id, userEntity.Email!, role);
-            var refreshToken = _generateJwtToken.GenerateRefreshToken();
+            try
+            {
+                string role = userEntity.Role ?? "User";
+                var accessToken = _generateJwtToken.GenerateAccessToken(userEntity.Id, userEntity.Email!, role);
+                var refreshToken = _generateJwtToken.GenerateRefreshToken();
 
-            await _repo.usersRepo.SaveRefreshTokenAsync(userEntity.Id, refreshToken.Token, refreshToken.ExpiryDate);
-            SetRefreshTokenCookie(refreshToken.Token, refreshToken.ExpiryDate);
-            var userResponse = new
+                await _repo.usersRepo.SaveRefreshTokenAsync(userEntity.Id, refreshToken.Token, refreshToken.ExpiryDate);
+                SetRefreshTokenCookie(refreshToken.Token, refreshToken.ExpiryDate);
+                var userResponse = new
+                {
+                    Id = userEntity.Id,
+                    Email = userEntity.Email,
+                    HoTen = userEntity.FullName,
+                    Role = role
+                };
+                await _repo.SaveAllAsync();
+                return Ok(new
+                {
+                    success = true,
+                    message = "Đăng nhập thành công",
+                    accessToken = accessToken,
+                    user = userResponse
+                });
+            }
+            catch (Exception ex)
             {
-                Id = userEntity.Id,
-                Email = userEntity.Email,
-                HoTen = userEntity.FullName,
-                Role = role
-            };
-            return Ok(new
-            {
-                success = true,
-                message = "Đăng nhập thành công",
-                accessToken = accessToken,
-                user = userResponse
-            });
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
         }
         private void SetRefreshTokenCookie(string token, DateTime expires)
         {
@@ -82,33 +91,35 @@ namespace API.Controllers
             {
                 return BadRequest(ModelState);
             }
-            bool isEmailExists = await _repo.usersRepo.ExistEmailAsync(request.Email);
-            if (isEmailExists)
+            try
             {
-                return Conflict (new { message = "Email này đã tồn tại" });
-            }
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-            string username= request.Email.Substring(0, request.Email.LastIndexOf('@'));
-            var newUser = new User
-            {
-                Email = request.Email,
-                PasswordHash = passwordHash,
-                Username = username,
-                FullName = request.Fullname,
-                CreatedAt = DateTime.Now,
-                Role = "User",
-                IsActive = true,
-                AvatarUrl= "default-avatar.jpg",
-            };
-            bool result=await _repo.usersRepo.CreateUserAsync(newUser);
-            if (!result)
-            {
-                return StatusCode(500, new
+
+                bool isEmailExists = await _repo.usersRepo.ExistEmailAsync(request.Email);
+                if (isEmailExists)
                 {
-                    message = "Loi khi them du lieu"
-                });
+                    return Conflict(new { message = "Email này đã tồn tại" });
+                }
+                string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                string username = request.Email.Substring(0, request.Email.LastIndexOf('@'));
+                var newUser = new User
+                {
+                    Email = request.Email,
+                    PasswordHash = passwordHash,
+                    Username = username,
+                    FullName = request.Fullname,
+                    CreatedAt = DateTime.Now,
+                    Role = "User",
+                    IsActive = true,
+                    AvatarUrl = "default-avatar.jpg",
+                };
+                await _repo.usersRepo.CreateUserAsync(newUser);
+                await _repo.SaveAllAsync();
+                return Created();
             }
-            return Created();
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
         }
         [HttpPost("google-login")]
         [EnableRateLimiting("ip_auth")]
@@ -174,13 +185,22 @@ namespace API.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            Response.Cookies.Delete("refreshToken");
-            int userId = User.GetUserId();
-            if (userId != 0)
+            try
             {
-                await _repo.usersRepo.RevokeRefreshTokenAsync(userId);
+
+                Response.Cookies.Delete("refreshToken");
+                int userId = User.GetUserId();
+                if (userId != 0)
+                {
+                    await _repo.usersRepo.RevokeRefreshTokenAsync(userId);
+                    await _repo.SaveAllAsync();
+                }
+                return Ok(new { message = "Đăng xuất thành công" });
             }
-            return Ok(new { message = "Đăng xuất thành công" });
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
         }
     }
 }   

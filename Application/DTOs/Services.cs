@@ -19,11 +19,25 @@ namespace Application.DTOs
     }
     public class ScanFileResultDto
     {
-        public string FilePath { get; set; }
-        public string Status { get; set; }
-        public string UserId { get; set; }
-        public string DocIdDto { get; set; }
-        public string Message { get; set; }
+        public string? FilePath { get; set; }
+        public string? Status { get; set; }
+        public string? UserId { get; set; }
+        public string? DocIdDto { get; set; }
+        public string? Message { get; set; }
+    }
+    public class ThumbRequestEvent
+    {
+        public long DocId { get; set; }
+        public string FileUrl { get; set; }      
+        public string BucketName { get; set; }   
+    }
+
+    public class ThumbResponseEvent
+    {
+        public int DocId { get; set; }
+        public string ThumbnailUrl { get; set; } 
+        public bool IsSuccess { get; set; }
+        public string ErrorMessage { get; set; }
     }
     public enum StorageType
     {

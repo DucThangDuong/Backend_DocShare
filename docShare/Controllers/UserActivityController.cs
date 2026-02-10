@@ -18,6 +18,19 @@ namespace API.Controllers
         {
             _repo = repo;
         }
+        //get
+        [Authorize]
+        [EnableRateLimiting("read_limit")]
+        [HttpGet("saved-library")]
+        public async Task<IActionResult> GetMySavedDocuments()
+        {
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            var docs = await _repo.userActivityRepo.GetSavedDocumentsByUserAsync(userId);
+            return Ok(docs);
+        }
+        //post
+        [Authorize]
         [EnableRateLimiting("export_file_light")]
         [HttpPost("vote/{docId}")]
         public async Task<IActionResult> VoteDocument(int docId, [FromBody] ReqVoteDto dto)
@@ -29,6 +42,7 @@ namespace API.Controllers
             if (result) return Ok(new { message = "Đã ghi nhận tương tác." });
             return BadRequest(new { message = "Không thể thực hiện thao tác." });
         }
+        [Authorize]
         [EnableRateLimiting("export_file_light")]
         [HttpPost("save/{docId}")]
         public async Task<IActionResult> ToggleSaveDocument(int docId)
@@ -41,15 +55,6 @@ namespace API.Controllers
                 return BadRequest(new { message = "Không thể thực hiện thao tác." });
             }
             return Ok(new { message = "Lưu tài liệu thành công" });
-        }
-        [EnableRateLimiting("read_limit")]
-        [HttpGet("saved-library")]
-        public async Task<IActionResult> GetMySavedDocuments()
-        {
-            int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-            var docs = await _repo.userActivityRepo.GetSavedDocumentsByUserAsync(userId);
-            return Ok(docs);
         }
     }
 }

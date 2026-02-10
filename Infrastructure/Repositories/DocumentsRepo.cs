@@ -27,28 +27,16 @@ namespace Infrastructure.Repositories
             return await _context.Documents.AsNoTracking().CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 1);
         }
 
-        public async Task<bool> CreateAsync(Document document)
+        public async Task CreateAsync(Document document)
         {
-            try
-            {
-                await _context.Documents.AddAsync(document);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            await _context.Documents.AddAsync(document);
         }
 
-        public async Task<bool> MoveToTrash(int docID)
+        public async Task MoveToTrash(int docID)
         {
             var docchange = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docID);
-            if (docchange == null) return false;
-            docchange.IsDeleted = 1;
+            docchange!.IsDeleted = 1;
             _context.Documents.Update(docchange);
-            var result = await _context.SaveChangesAsync();
-            return result > 0;
         }
 
         public async Task<Document?> GetDocByIDAsync(int docId)
@@ -71,10 +59,11 @@ namespace Infrastructure.Repositories
                     Description = d.Description,
                     FileUrl = d.FileUrl,
                     Title = d.Title,
+                    Thumbnail=d.Thumbnail,
                 }).ToListAsync();
         }
 
-        public async Task<ResDocumentDto?> GetDocWithUserByUserID(int docID, int currentUserId)
+        public async Task<ResDocumentDto?> GetDocByUserIDAsync(int docID, int currentUserId)
         {
             var query = _context.Documents
                 .AsNoTracking()
@@ -93,6 +82,7 @@ namespace Infrastructure.Repositories
                     DislikeCount = d.DislikeCount,
                     LikeCount = d.LikeCount,
                     ViewCount = d.ViewCount,
+                    Thumbnail=d.Thumbnail,
                     IsLiked = _context.DocumentVotes
                                 .Where(v => v.DocumentId == d.Id && v.UserId == currentUserId)
                                 .Select(v => (bool?)v.IsLike).FirstOrDefault(),
@@ -107,28 +97,33 @@ namespace Infrastructure.Repositories
             return await _context.Documents.AsNoTracking().AnyAsync(e => e.Id == docID);
         }
 
-        public async Task<bool> UpdateAsync(Document document)
+        public async Task UpdateAsync(Document document)
         {
-            try
-            {
-                _context.Documents.Update(document);
-                return await _context.SaveChangesAsync() > 0;
-            }
-            catch
-            {
-                return false;
-            }
+            _context.Documents.Update(document);
+
         }
 
-        public async Task<bool> DeleteFileUrl(int docid)
+        public async Task DeleteFileUrl(int docid)
         {
             var doc = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docid);
-            if (doc == null) {
-                return false;
-            }
-            doc.FileUrl=String.Empty;
+            doc!.FileUrl = String.Empty;
             doc.SizeInBytes = 0;
-            return true;
+            doc.Thumbnail = null;
+        }
+
+        public async Task<ResUserStatsDto?> GetUserStatsAsync(int userId)
+        {
+            var stats = await _context.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new ResUserStatsDto
+            {
+                UploadCount = _context.Documents.Count(d => d.UploaderId == userId && d.IsDeleted == 0),
+                SavedCount = _context.SavedDocuments.Count(s => s.UserId == userId),
+                TotalLikesReceived = _context.Documents.Where(e => e.UploaderId == userId).Select(e => (int?)e.LikeCount).Sum() ?? 0
+            })
+            .FirstOrDefaultAsync();
+
+            return stats;
         }
     }
 }

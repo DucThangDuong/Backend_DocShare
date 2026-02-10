@@ -29,9 +29,69 @@ namespace API.Controllers
             _rabbitMQService = rabbitMQService;
             _storageService = storageService;
         }
+        //get 
+        [Authorize]
+        [HttpGet("documents")]
+        [EnableRateLimiting("read_limit")]
+        public async Task<IActionResult> GetDocsOfUser([FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            if (take > 50) { take = 50; }
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            try
+            {
+                List<ResDocumentDto> response = await _repo.documentsRepo.GetDocsByUserIdPagedAsync(userId, skip, take);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                return BadRequest(new { message = "Có lỗi xảy ra khi tải dữ liệu." });
+            }
+        }
+        
+        [HttpGet("document/detail/{docid}")]
+        [EnableRateLimiting("read_limit")]
+        public async Task<IActionResult> GetDetailDoc(int docid)
+        {
+
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            bool ishas = await _repo.documentsRepo.HasDocument(docid);
+            if (!ishas)
+            {
+                return NotFound(new { message = "Không tìm thấy tài liệu." });
+            }
+            ResDocumentDto? result = await _repo.documentsRepo.GetDocByUserIDAsync(docid, userId);
+            if (result == null)
+            {
+                return NotFound(new { message = "Không tìm thấy tài liệu." });
+            }
+            return Ok(result);
+
+        }
+        [Authorize]
+        [HttpGet("document/stats")]
+        public async Task<IActionResult> GetUserStats()
+        {
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            ResUserStatsDto? userStatsDto = await _repo.documentsRepo.GetUserStatsAsync(userId);
+            if (userStatsDto == null)
+            {
+                ResUserStatsDto res = new ResUserStatsDto();
+                res.SavedCount = 0;
+                res.UploadCount = 0;
+                res.TotalLikesReceived = 0;
+                return Ok(res);
+            }
+            return Ok(userStatsDto);
+        }
+        //post
+
         [HttpPost("document/check")]
         [Authorize]
-        public async Task<IActionResult> CheckDocument([FromForm] ReqCreateDocumentDTO dto)
+        public async Task<IActionResult> PostCheckDocumentFile([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
                 return BadRequest(new { message = "Vui lòng chọn file." });
@@ -64,11 +124,10 @@ namespace API.Controllers
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
-
         [HttpPost("document")]
         [Authorize]
         [EnableRateLimiting("upload_limit")]
-        public async Task<IActionResult> UploadDocument([FromForm] ReqCreateDocumentDTO dto)
+        public async Task<IActionResult> PostDocument([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
                 return BadRequest(new { message = "Vui lòng chọn file." });
@@ -125,97 +184,49 @@ namespace API.Controllers
                         }
                     }
                 }
-                bool iscreate = await _repo.documentsRepo.CreateAsync(newDoc);
-                if (iscreate)
+                await _repo.documentsRepo.CreateAsync(newDoc);
+                await _repo.SaveAllAsync();
+                var thumbMsg = new ThumbRequestEvent
                 {
-                    return Created();
-                }
-                return BadRequest(new
-                {
-                    message = "Lỗi khi tải dữ liệu"
-                });
+                    DocId = newDoc.Id,
+                    FileUrl = newDoc.FileUrl,
+                    BucketName = "pdf-storage"
+                };
+                await _rabbitMQService.SendThumbnailRequest(thumbMsg);
+                return Created();
+
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
-        [HttpGet("documents")]
+        //patch
+        [HttpPatch("document/{docid}/movetotrash")]
         [Authorize]
-        [EnableRateLimiting("read_limit")]
-        public async Task<IActionResult> GetInforDoc([FromQuery] int skip = 0, [FromQuery] int take = 10)
+        [EnableRateLimiting("export_file_light")]
+        public async Task<IActionResult> PatchMoveToTrash(int docid, [FromBody] ReqMoveToTrashDTO isdelete)
         {
-            if (take > 50) { take = 50; }
-            int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            bool ishas = await _repo.documentsRepo.HasDocument(docid);
             try
             {
-                List<ResDocumentDto> response = await _repo.documentsRepo.GetDocsByUserIdPagedAsync(userId, skip, take);
-                return Ok(response);
+
+                if (!ishas)
+                {
+                    return NotFound(new { message = "Không tìm thấy tài liệu." });
+                }
+                if (isdelete.isDeleted == false)
+                {
+                    return BadRequest(new { message = "Yêu cầu không hợp lệ." });
+                }
+                await _repo.documentsRepo.MoveToTrash(docid);
+                await _repo.SaveAllAsync();
+                return NoContent();
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex);
-                return BadRequest(new { message = "Có lỗi xảy ra khi tải dữ liệu." });
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
-        }
-        [HttpGet("document/download/{docid}")]
-        [EnableRateLimiting("read_limit")]
-        public async Task<IActionResult> GetPdf(int docid)
-        {
-            Document? document = await _repo.documentsRepo.GetDocByIDAsync(docid);
-            if (document == null)
-            {
-                return NotFound(new { message = "Không tìm thấy thông tin tài liệu trong database." });
-            }
-            bool fileExists = await _storageService.FileExistsAsync($"{document.FileUrl}", StorageType.Document);
-            if (!fileExists)
-            {
-                return NotFound(new { message = "Tệp tin không tồn tại trên hệ thống lưu trữ đám mây." });
-            }
-            var s3Stream = await _storageService.GetFileStreamAsync(document.FileUrl, StorageType.Document);
-            return File(s3Stream, "application/pdf", $"{document.Title}");
-        }
-        [HttpGet("document/detail/{docid}")]
-        [EnableRateLimiting("read_limit")]
-        public async Task<IActionResult> GetDetailDoc(int docid)
-        {
-
-            bool ishas = await _repo.documentsRepo.HasDocument(docid);
-            int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-            if (!ishas)
-            {
-                return NotFound(new { message = "Không tìm thấy tài liệu." });
-            }
-            ResDocumentDto? result = await _repo.documentsRepo.GetDocWithUserByUserID(docid, userId);
-            if (result == null)
-            {
-                return NotFound(new { message = "Không tìm thấy tài liệu." });
-            }
-            return Ok(result);
-
-        }
-        [HttpPatch("document/movetotrash/{docid}")]
-        [Authorize]
-        [EnableRateLimiting("export_file_light")]
-        public async Task<IActionResult> MoveToTrash(int docid, [FromBody] ReqMoveToTrashDTO isdelete)
-        {
-            bool ishas = await _repo.documentsRepo.HasDocument(docid);
-            if (!ishas)
-            {
-                return NotFound(new { message = "Không tìm thấy tài liệu." });
-            }
-            if (isdelete.isDeleted == false)
-            {
-                return BadRequest(new { message = "Yêu cầu không hợp lệ." });
-            }
-            bool isupdate = await _repo.documentsRepo.MoveToTrash(docid);
-            if (isupdate)
-            {
-                return NoContent();
-            }
-            return BadRequest(new { message = "Lỗi khi cập nhật dữ liệu." });
         }
         [Authorize]
         [HttpPatch("document/{docid}")]
@@ -224,93 +235,83 @@ namespace API.Controllers
         {
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-            var document = await _repo.documentsRepo.GetDocByIDAsync(docid);
-            if (document == null) return NotFound(new { message = "Tài liệu không tồn tại." });
-            if (document.UploaderId != userId) return Forbid();
+            try
+            {
 
-            bool isChanged = false;
-            string oldTitle = document.Title;
-            string oldFileUrl = document.FileUrl;
-            if (!string.IsNullOrEmpty(dto.Title) && document.Title != dto.Title)
-            {
-                document.Title = dto.Title;
-                isChanged = true;
-            }
 
-            if (!string.IsNullOrEmpty(dto.Description) && document.Description != dto.Description)
-            {
-                document.Description = dto.Description;
-                isChanged = true;
-            }
+                var document = await _repo.documentsRepo.GetDocByIDAsync(docid);
+                if (document == null) return NotFound(new { message = "Tài liệu không tồn tại." });
+                if (document.UploaderId != userId) return Forbid();
 
-            if (!string.IsNullOrEmpty(dto.Status) && document.Status != dto.Status)
-            {
-                document.Status = dto.Status;
-                isChanged = true;
-            }
-            if (dto.File != null && dto.File.Length > 0)
-            {
-                if (!string.IsNullOrEmpty(document.FileUrl))
+                string oldTitle = document.Title;
+                string oldFileUrl = document.FileUrl;
+                if (!string.IsNullOrEmpty(dto.Title) && document.Title != dto.Title)
                 {
-                    await _storageService.DeleteFileAsync(document.FileUrl, StorageType.Document);
+                    document.Title = dto.Title;
                 }
-                string newKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
-                using (var stream = dto.File.OpenReadStream())
+
+                if (!string.IsNullOrEmpty(dto.Description) && document.Description != dto.Description)
                 {
-                    await _storageService.UploadFileAsync(stream, newKey, "application/pdf", StorageType.Document);
+                    document.Description = dto.Description;
                 }
-                document.FileUrl = newKey;
-                document.SizeInBytes = dto.File.Length;
-                isChanged = true;
-            }
-            if (dto.Tags == null)
-            {
-                await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
-                isChanged = true;
 
-            }
-            else
-            {
-                await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
-                foreach (var tagName in dto.Tags)
+                if (!string.IsNullOrEmpty(dto.Status) && document.Status != dto.Status)
                 {
-                    string tagSlug = StringHelpers.GenerateSlug(tagName);
-                    var existingTag = await _repo.tagsRepo.HasTag(tagSlug, tagName);
-
-                    if (existingTag != null)
+                    document.Status = dto.Status;
+                }
+                if (dto.File != null && dto.File.Length > 0)
+                {
+                    if (!string.IsNullOrEmpty(document.FileUrl))
                     {
-                        document.Tags.Add(existingTag);
+                        await _storageService.DeleteFileAsync(document.FileUrl, StorageType.Document);
                     }
-                    else
+                    string newKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
+                    using (var stream = dto.File.OpenReadStream())
                     {
-                        var newTag = new Tag
+                        await _storageService.UploadFileAsync(stream, newKey, "application/pdf", StorageType.Document);
+                    }
+                    document.FileUrl = newKey;
+                    document.SizeInBytes = dto.File.Length;
+                }
+                if (dto.Tags == null)
+                {
+                    await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
+                }
+                else
+                {
+                    await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
+                    foreach (var tagName in dto.Tags)
+                    {
+                        string tagSlug = StringHelpers.GenerateSlug(tagName);
+                        var existingTag = await _repo.tagsRepo.HasTag(tagSlug, tagName);
+
+                        if (existingTag != null)
                         {
-                            Name = tagName,
-                            Slug = tagSlug
-                        };
-                        document.Tags.Add(newTag);
+                            document.Tags.Add(existingTag);
+                        }
+                        else
+                        {
+                            var newTag = new Tag
+                            {
+                                Name = tagName,
+                                Slug = tagSlug
+                            };
+                            document.Tags.Add(newTag);
+                        }
                     }
                 }
-                isChanged = true;
+                document.UpdatedAt = DateTime.UtcNow;
+                await _repo.documentsRepo.UpdateAsync(document);
+                await _repo.SaveAllAsync();
+                return NoContent();
             }
-            if (isChanged)
+            catch (Exception ex)
             {
-                try
-                {
-                    document.UpdatedAt = DateTime.UtcNow;
-                    var result = await _repo.documentsRepo.UpdateAsync(document);
-                    if (!result) return BadRequest(new { message = "Lỗi khi cập nhật cơ sở dữ liệu." });
-                    await _repo.SaveAllAsync();
-                    return NoContent();
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new { message = ex.Message });
-                }
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
-
-            return Ok(new { message = "Không có gì thay đổi." });
         }
+        
+        //delete
         [Authorize]
         [HttpDelete("document/{docid}/fileUrl")]
         public async Task<IActionResult> DeleteDocumentFileUrl(int docid)
@@ -320,21 +321,23 @@ namespace API.Controllers
             try
             {
 
-                bool result = await _repo.documentsRepo.DeleteFileUrl(docid);
+                bool result = await _repo.documentsRepo.HasDocument(docid); 
                 if (result)
                 {
+                    await _repo.documentsRepo.DeleteFileUrl(docid);
                     await _repo.SaveAllAsync();
                     return NoContent();
                 }
                 else
                 {
-                    return NotFound(new {message="Không timf thấy tài liệu"});
+                    return NotFound(new {message="Không tìm thấy tài liệu"});
                 }
             }
-            catch
+            catch(Exception ex)
             {
-                return BadRequest();
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
     }
+
 }

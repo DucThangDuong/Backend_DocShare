@@ -23,6 +23,7 @@ namespace Application.DTOs
         public int? DislikeCount { get; set; }
         public bool? IsLiked { get; set; } 
         public bool? IsSaved { get; set; }
+        public string? Thumbnail { get; set; }
         public List<string>? Tags { get; set; }
     }
     public class ResUserStorageFileDto
@@ -31,5 +32,11 @@ namespace Application.DTOs
         public long UsedStorage { get; set; }
         public int TotalCount { get; set; }
         public int Trash { get; set; }
+    }
+    public class ResUserStatsDto
+    {
+        public int UploadCount { get; set; }
+        public int SavedCount {  get; set; }
+        public int TotalLikesReceived {  get; set; }
     }
 }

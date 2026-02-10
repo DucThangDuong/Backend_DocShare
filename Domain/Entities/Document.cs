@@ -11,6 +11,7 @@ public partial class Document
     public string? Description { get; set; }
 
     public string FileUrl { get; set; } = null!;
+    public string? Thumbnail { get; set; }
 
     public long SizeInBytes { get; set; }
 

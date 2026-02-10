@@ -61,6 +61,7 @@ public partial class DocShareContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.FileUrl).HasMaxLength(500);
+            entity.Property(e=>e.Thumbnail).HasMaxLength(500);
             entity.Property(e => e.IsDeleted).HasDefaultValue((byte)0);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)

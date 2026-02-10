@@ -13,19 +13,9 @@ namespace Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<bool> CreateUserAsync(User user)
+        public async Task CreateUserAsync(User user)
         {
-            try
-            {
-                await _context.Users.AddAsync(user);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-
+            await _context.Users.AddAsync(user);
         }
 
         public async Task<bool> ExistEmailAsync(string email)
@@ -55,7 +45,6 @@ namespace Infrastructure.Repositories
             {
                 userrevoke.RefreshToken = null;
                 userrevoke.RefreshTokenExpiryTime = null;
-                await _context.SaveChangesAsync();
             }
         }
 
@@ -67,7 +56,6 @@ namespace Infrastructure.Repositories
             {
                 user.RefreshToken = refreshToken;
                 user.RefreshTokenExpiryTime = expiryDate;
-                await _context.SaveChangesAsync();
             }
         }
         public async Task<ResUserStorageFileDto?> GetUserStorageStatsAsync(int userId)
@@ -102,46 +90,27 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<bool> UpdateUserProfile(int userId, string? email, string? password, string? fullname)
+        public async Task UpdateUserProfile(int userId, string? email, string? password, string? fullname)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
-            {
-                return false;
-            }
             if (!string.IsNullOrWhiteSpace(email))
             {
-                user.Email = email;
+                user!.Email = email;
             }
 
             if (!string.IsNullOrWhiteSpace(password))
             {
-                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+                user!.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
             }
             if (!string.IsNullOrWhiteSpace(fullname))
             {
-                user.FullName = fullname;
+                user!.FullName = fullname;
             }
-            return await _context.SaveChangesAsync() > 0;
         }
-        public async Task<bool> UpdateUserAvatar(int userId, string avatarFileName)
+        public async Task UpdateUserAvatar(int userId, string avatarFileName)
         {
-            try
-            {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-                if (user == null)
-                {
-                    return false;
-                }
-                user.AvatarUrl = avatarFileName;
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            user!.AvatarUrl = avatarFileName;
         }
 
         public async Task<bool> ExistUserNameAsync(string username)
@@ -149,26 +118,16 @@ namespace Infrastructure.Repositories
             return await _context.Users.AsNoTracking().AnyAsync(e => e.Username == username);
         }
 
-        public async Task<bool> UpdateUserNameAsync(string username, int userId)
+        public async Task UpdateUserNameAsync(string username, int userId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
-            if (user == null)
-            {
-                return false;
-            }
-            user.Username = username;
-            return await _context.SaveChangesAsync() > 0;
+            user!.Username = username;
         }
 
-        public async Task<bool> UpdateUserPassword(string newPassword, int userId)
+        public async Task UpdateUserPassword(string newPassword, int userId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
-            if (user == null)
-            {
-                return false;
-            }
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            return await _context.SaveChangesAsync() > 0;
+            user!.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         }
 
         public Task<string?> GetPasswordByUserId(int userId)
@@ -177,6 +136,11 @@ namespace Infrastructure.Repositories
                 .Where(u => u.Id == userId)
                 .Select(u => u.PasswordHash)
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> HasUser(int userId)
+        {
+            return await _context.Users.AnyAsync(e => e.Id == userId);
         }
     }
 }
