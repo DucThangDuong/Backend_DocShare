@@ -7,28 +7,29 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-using System.Text;
-using System.Text.RegularExpressions;
+using UglyToad.PdfPig;
 using API.Extensions;
+using Microsoft.Extensions.Caching.Memory;
+
 namespace API.Controllers
 {
     [Route("api")]
     [ApiController]
     public class DocumentsController : ControllerBase
     {
-        private readonly IConfiguration _config;
         private readonly IUnitOfWork _repo;
         private readonly RabbitMQService _rabbitMQService;
         private readonly IStorageService _storageService;
-        public DocumentsController(IConfiguration config, IUnitOfWork repo, RabbitMQService rabbitMQService, IStorageService storageService)
+        private readonly IMemoryCache _cache;
+
+        public DocumentsController(IUnitOfWork repo, RabbitMQService rabbitMQService, IStorageService storageService, IMemoryCache cache)
         {
-            _config = config;
             _repo = repo;
             _rabbitMQService = rabbitMQService;
             _storageService = storageService;
+            _cache = cache;
         }
+
         //get 
         [Authorize]
         [HttpGet("documents")]
@@ -54,9 +55,15 @@ namespace API.Controllers
         [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> GetDetailDoc(int docid)
         {
-
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+
+            string cacheKey = $"doc_detail_{docid}_{userId}";
+            if (_cache.TryGetValue(cacheKey, out ResDocumentDto? cachedResult))
+            {
+                return Ok(cachedResult);
+            }
+
             bool ishas = await _repo.documentsRepo.HasDocument(docid);
             if (!ishas)
             {
@@ -67,24 +74,43 @@ namespace API.Controllers
             {
                 return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
-            return Ok(result);
 
+            var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5)) 
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+            _cache.Set(cacheKey, result, cacheOptions);
+
+            return Ok(result);
         }
+
         [Authorize]
         [HttpGet("document/stats")]
         public async Task<IActionResult> GetUserStats()
         {
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+
+            string cacheKey = $"user_stats_{userId}";
+            if (_cache.TryGetValue(cacheKey, out ResUserStatsDto? cachedStats))
+            {
+                return Ok(cachedStats);
+            }
+
             ResUserStatsDto? userStatsDto = await _repo.documentsRepo.GetUserStatsAsync(userId);
             if (userStatsDto == null)
             {
-                ResUserStatsDto res = new ResUserStatsDto();
-                res.SavedCount = 0;
-                res.UploadCount = 0;
-                res.TotalLikesReceived = 0;
-                return Ok(res);
+                userStatsDto = new ResUserStatsDto
+                {
+                    SavedCount = 0,
+                    UploadCount = 0,
+                    TotalLikesReceived = 0
+                };
             }
+
+            var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(2));
+            _cache.Set(cacheKey, userStatsDto, cacheOptions);
+
             return Ok(userStatsDto);
         }
         //post
@@ -144,8 +170,24 @@ namespace API.Controllers
                 {
                     return BadRequest($"File '{dto.File.FileName}' đã tồn tại trên hệ thống. Vui lòng đổi tên hoặc kiểm tra lại.");
                 }
+
+                int pageCount = 0;
+
                 using (var stream = dto.File.OpenReadStream())
                 {
+                    try
+                    {
+                        using (var pdfDocument = PdfDocument.Open(stream))
+                        {
+                            pageCount = pdfDocument.NumberOfPages;
+                        }
+                    }
+                    catch
+                    {
+                        return BadRequest(new { message = "File PDF bị lỗi hoặc bị hỏng, không thể đọc." });
+                    }
+
+                    stream.Position = 0;
                     await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf", StorageType.Document);
                 }
                 var newDoc = new Document
@@ -156,7 +198,8 @@ namespace API.Controllers
                     UploaderId = userId,
                     Status = dto.Status,
                     IsDeleted = 0,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    PageCount = pageCount,
                 };
                 if (!string.IsNullOrEmpty(dto.Tags))
                 {
@@ -186,6 +229,8 @@ namespace API.Controllers
                 }
                 await _repo.documentsRepo.CreateAsync(newDoc);
                 await _repo.SaveAllAsync();
+                _cache.Remove($"user_stats_{userId}");
+
                 var thumbMsg = new ThumbRequestEvent
                 {
                     DocId = newDoc.Id,
@@ -207,6 +252,7 @@ namespace API.Controllers
         [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> PatchMoveToTrash(int docid, [FromBody] ReqMoveToTrashDTO isdelete)
         {
+            int userId = User.GetUserId();
             bool ishas = await _repo.documentsRepo.HasDocument(docid);
             try
             {
@@ -221,6 +267,12 @@ namespace API.Controllers
                 }
                 await _repo.documentsRepo.MoveToTrash(docid);
                 await _repo.SaveAllAsync();
+                if (userId != 0)
+                {
+                    _cache.Remove($"doc_detail_{docid}_{userId}");
+                    _cache.Remove($"user_stats_{userId}");
+                }
+
                 return NoContent();
             }
             catch (Exception ex)
@@ -265,13 +317,36 @@ namespace API.Controllers
                     {
                         await _storageService.DeleteFileAsync(document.FileUrl, StorageType.Document);
                     }
-                    string newKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
+                    string s3ObjectKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
+                    int pageCount = 0;
                     using (var stream = dto.File.OpenReadStream())
                     {
-                        await _storageService.UploadFileAsync(stream, newKey, "application/pdf", StorageType.Document);
+                        try
+                        {
+                            using (var pdfDocument = PdfDocument.Open(stream))
+                            {
+                                pageCount = pdfDocument.NumberOfPages;
+                            }
+                        }
+                        catch
+                        {
+                            return BadRequest(new { message = "File PDF bị lỗi hoặc bị hỏng, không thể đọc." });
+                        }
+
+                        stream.Position = 0;
+                        await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf", StorageType.Document);
                     }
-                    document.FileUrl = newKey;
+                    document.FileUrl = s3ObjectKey;
                     document.SizeInBytes = dto.File.Length;
+                    document.PageCount = pageCount;
+                    document.CreatedAt = DateTime.UtcNow;
+                    var thumbMsg = new ThumbRequestEvent
+                    {
+                        DocId = document.Id,
+                        FileUrl = document.FileUrl,
+                        BucketName = "pdf-storage"
+                    };
+                    await _rabbitMQService.SendThumbnailRequest(thumbMsg);
                 }
                 if (dto.Tags == null)
                 {
@@ -303,6 +378,8 @@ namespace API.Controllers
                 document.UpdatedAt = DateTime.UtcNow;
                 await _repo.documentsRepo.UpdateAsync(document);
                 await _repo.SaveAllAsync();
+                _cache.Remove($"doc_detail_{docid}_{userId}");
+
                 return NoContent();
             }
             catch (Exception ex)
@@ -326,6 +403,7 @@ namespace API.Controllers
                 {
                     await _repo.documentsRepo.DeleteFileUrl(docid);
                     await _repo.SaveAllAsync();
+                    _cache.Remove($"doc_detail_{docid}_{userId}");
                     return NoContent();
                 }
                 else
@@ -339,5 +417,4 @@ namespace API.Controllers
             }
         }
     }
-
 }

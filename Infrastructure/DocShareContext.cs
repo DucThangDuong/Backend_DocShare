@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
+
 namespace Infrastructure;
 
 public partial class DocShareContext : DbContext
@@ -31,9 +32,9 @@ public partial class DocShareContext : DbContext
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC072A9EF5E8");
+            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC0765A40C80");
 
-            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6A6633C3F").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB66C92E9D2").IsUnique();
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -44,7 +45,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Document>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC07DC7308A3");
+            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC07223D7D32");
 
             entity.ToTable(tb =>
                 {
@@ -61,12 +62,12 @@ public partial class DocShareContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.FileUrl).HasMaxLength(500);
-            entity.Property(e=>e.Thumbnail).HasMaxLength(500);
             entity.Property(e => e.IsDeleted).HasDefaultValue((byte)0);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Pending");
+            entity.Property(e => e.Thumbnail).HasMaxLength(500);
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -93,14 +94,14 @@ public partial class DocShareContext : DbContext
                         .HasConstraintName("FK_DocTags_Doc"),
                     j =>
                     {
-                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920951B1323B9");
+                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920953CCAFC29");
                         j.ToTable("DocumentTags");
                     });
         });
 
         modelBuilder.Entity<DocumentVote>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC149F2266");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC254285B0");
 
             entity.ToTable(tb => tb.HasTrigger("trg_UpdateVoteCounts"));
 
@@ -120,7 +121,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<SavedDocument>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BC67AF32E8");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BC16D25B2A");
 
             entity.Property(e => e.SavedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -138,11 +139,11 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC07EAAB68DC");
+            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC074103EB83");
 
             entity.HasIndex(e => e.Slug, "IX_Tags_Slug");
 
-            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB6B2A1F029").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB6CDE9272E").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
             entity.Property(e => e.Slug)
@@ -152,11 +153,11 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC073EB8FA26");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07BCE63F6E");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E46415C233").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E46F069D7F").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534589A88EC").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534F13F4C1C").IsUnique();
 
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(255)

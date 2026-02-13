@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+
 namespace Domain.Entities;
 
 public partial class Document
@@ -11,9 +12,12 @@ public partial class Document
     public string? Description { get; set; }
 
     public string FileUrl { get; set; } = null!;
-    public string? Thumbnail { get; set; }
 
     public long SizeInBytes { get; set; }
+
+    public string? Thumbnail { get; set; }
+
+    public int? PageCount { get; set; }
 
     public int UploaderId { get; set; }
 

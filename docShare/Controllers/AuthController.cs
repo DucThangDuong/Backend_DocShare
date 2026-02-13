@@ -1,15 +1,10 @@
 ﻿using API.DTOs;
 using Application.Interfaces;
 using Application.IServices;
-using Azure.Core;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client.Extensibility;
-using System.Security.Claims;
 using API.Extensions;
 
 namespace API.Controllers
@@ -187,7 +182,6 @@ namespace API.Controllers
         {
             try
             {
-
                 Response.Cookies.Delete("refreshToken");
                 int userId = User.GetUserId();
                 if (userId != 0)

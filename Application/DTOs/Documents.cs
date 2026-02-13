@@ -24,6 +24,7 @@ namespace Application.DTOs
         public bool? IsLiked { get; set; } 
         public bool? IsSaved { get; set; }
         public string? Thumbnail { get; set; }
+        public int? PageCount { get; set; }
         public List<string>? Tags { get; set; }
     }
     public class ResUserStorageFileDto

@@ -60,6 +60,7 @@ namespace Infrastructure.Repositories
                     FileUrl = d.FileUrl,
                     Title = d.Title,
                     Thumbnail=d.Thumbnail,
+                    PageCount = d.PageCount,
                 }).ToListAsync();
         }
 
@@ -83,6 +84,7 @@ namespace Infrastructure.Repositories
                     LikeCount = d.LikeCount,
                     ViewCount = d.ViewCount,
                     Thumbnail=d.Thumbnail,
+                    PageCount=d.PageCount,
                     IsLiked = _context.DocumentVotes
                                 .Where(v => v.DocumentId == d.Id && v.UserId == currentUserId)
                                 .Select(v => (bool?)v.IsLike).FirstOrDefault(),
@@ -109,6 +111,8 @@ namespace Infrastructure.Repositories
             doc!.FileUrl = String.Empty;
             doc.SizeInBytes = 0;
             doc.Thumbnail = null;
+            doc.CreatedAt = null;
+            doc.PageCount = 0;
         }
 
         public async Task<ResUserStatsDto?> GetUserStatsAsync(int userId)

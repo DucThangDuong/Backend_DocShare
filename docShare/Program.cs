@@ -30,6 +30,9 @@ namespace API
                     .AllowCredentials();
                 });
             });
+            // Add Memory Cache
+            builder.Services.AddMemoryCache();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddRateLimiter(options =>
@@ -63,39 +66,39 @@ namespace API
                         }));
                 options.AddPolicy("export_file_light", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
                             ? httpContext.User.Identity.Name!
                             : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                            factory: _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = 5,
-                                Window = TimeSpan.FromSeconds(30),
-                                QueueLimit = 0
-                            }));
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromSeconds(30),
+                            QueueLimit = 0
+                        }));
 
                 options.AddPolicy("upload_limit", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
                             ? httpContext.User.Identity.Name!
                             : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                            factory: _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = 3,
-                                Window = TimeSpan.FromSeconds(60),
-                                QueueLimit = 0
-                            }));
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 3,
+                            Window = TimeSpan.FromSeconds(60),
+                            QueueLimit = 0
+                        }));
 
                 options.AddPolicy("read_limit", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
                             ? httpContext.User.Identity.Name!
                             : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                            factory: _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = 30,
-                                Window = TimeSpan.FromSeconds(30),
-                                QueueLimit = 0
-                            }));
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 30,
+                            Window = TimeSpan.FromSeconds(30),
+                            QueueLimit = 0
+                        }));
 
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             });
@@ -139,8 +142,6 @@ namespace API
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DocShare"));
             });
-
-            // Repositories
             builder.Services.AddScoped<IUsers, UsersRepo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IDocuments, DocumentsRepo>();
