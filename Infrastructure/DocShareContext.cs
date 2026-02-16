@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
-
 namespace Infrastructure;
 
 public partial class DocShareContext : DbContext
@@ -28,13 +27,14 @@ public partial class DocShareContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC0765A40C80");
+            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC07FD676EC0");
 
-            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB66C92E9D2").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6CDF4709E").IsUnique();
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -45,7 +45,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Document>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC07223D7D32");
+            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC079EC54495");
 
             entity.ToTable(tb =>
                 {
@@ -94,14 +94,14 @@ public partial class DocShareContext : DbContext
                         .HasConstraintName("FK_DocTags_Doc"),
                     j =>
                     {
-                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920953CCAFC29");
+                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920957C3D2D33");
                         j.ToTable("DocumentTags");
                     });
         });
 
         modelBuilder.Entity<DocumentVote>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC254285B0");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC13C5BE9B");
 
             entity.ToTable(tb => tb.HasTrigger("trg_UpdateVoteCounts"));
 
@@ -121,7 +121,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<SavedDocument>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BC16D25B2A");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BCEBBE6891");
 
             entity.Property(e => e.SavedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -139,11 +139,9 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC074103EB83");
+            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC0794D2C9DF");
 
             entity.HasIndex(e => e.Slug, "IX_Tags_Slug");
-
-            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB6CDE9272E").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
             entity.Property(e => e.Slug)
@@ -153,24 +151,33 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07BCE63F6E");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07C25C7CF7");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E46F069D7F").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E490C5E8E5").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534F13F4C1C").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534BDE74D1A").IsUnique();
 
-            entity.Property(e => e.AvatarUrl)
-                .HasMaxLength(255)
-                .IsUnicode(false)
-                .HasDefaultValue("default-avatar.jpg");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.CustomAvatar)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasDefaultValue("default-avatar.jpg");
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.FullName).HasMaxLength(100);
+            entity.Property(e => e.GoogleAvatar)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.GoogleId)
+                .HasMaxLength(255)
+                .IsUnicode(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e=>e.LoginProvider)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
                 .IsUnicode(false);

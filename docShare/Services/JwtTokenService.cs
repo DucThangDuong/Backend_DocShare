@@ -24,36 +24,6 @@ namespace API.Services
             _audience = _configuration["Jwt:Audience"];
         }
 
-        public string GenerateToken(ClaimsPrincipal principal)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
-            var email = principal.FindFirst(ClaimTypes.Email)?.Value;
-            var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(email))
-            {
-                throw new InvalidOperationException("Required claims (Email) missing from principal.");
-            }
-
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId ?? Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Email, email),
-            };
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(2),
-                SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature),
-                Issuer = _issuer,
-                Audience = _audience
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
-        }
 
         public string GenerateAccessToken(int userId, string email, string role)
         {

@@ -14,13 +14,14 @@ Dự án sử dụng các công nghệ và thư viện hiện đại sau:
 *   **Hàng đợi thông điệp (Message Queue)**: RabbitMQ
 *   **Xác thực (Authentication)**: JWT Bearer, Google Authentication
 *   **Rate Limiting**: Custom fixed window & IP-based policies
+*   **Cache**: Memory Cache
 
 ## 📂 Cấu Trúc Dự Án
 
 *   **API**: Chứa các Controllers, cấu hình Program.cs, DI container.
 *   **Application**: Chứa Business Logic, Interfaces, DTOs.
 *   **Infrastructure**: Triển khai các Interfaces (Repositories, Services), DbContext, Migrations.
-*   **Domain**: Chứa các Entity models (chưa thấy rõ trong danh sách file nhưng thường là vậy).
+*   **Domain**: Chứa các Entity models.
 
 ## 🚀 Cài Đặt & Chạy Dự Án
 
@@ -31,7 +32,7 @@ Dự án sử dụng các công nghệ và thư viện hiện đại sau:
 *   Công cụ quản lý S3 (AWS hoặc MinIO)
 
 ### 2. Cấu hình
-Dự án yêu cầu file cấu hình `appsettings.json`. Do vấn đề bảo mật, file này **không được đẩy lên Git**. Bạn cần tạo file `appsettings.json` trong thư mục `docShare/` (nơi chứa file `API.csproj`) với nội dung mẫu sau:
+Dự án yêu cầu file cấu hình `appsettings.json` với nội dung mẫu sau:
 
 ```json
 {

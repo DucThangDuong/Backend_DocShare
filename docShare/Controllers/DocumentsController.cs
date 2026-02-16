@@ -75,11 +75,6 @@ namespace API.Controllers
                 return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5)) 
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
-            _cache.Set(cacheKey, result, cacheOptions);
-
             return Ok(result);
         }
 
@@ -128,7 +123,7 @@ namespace API.Controllers
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
-                string s3ObjectKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
+                string s3ObjectKey = StringHelpers.Create_s3ObjectKey_file(dto.File.FileName, userId);
                 bool isExist = await _storageService.FileExistsAsync(s3ObjectKey, StorageType.Document);
                 if (isExist)
                 {
@@ -164,7 +159,7 @@ namespace API.Controllers
             {
                 int userId = User.GetUserId();
                 if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-                string s3ObjectKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
+                string s3ObjectKey = StringHelpers.Create_s3ObjectKey_file(dto.File.FileName, userId);
                 bool isExist = await _storageService.FileExistsAsync(s3ObjectKey, StorageType.Document);
                 if (isExist)
                 {
@@ -201,13 +196,9 @@ namespace API.Controllers
                     CreatedAt = DateTime.UtcNow,
                     PageCount = pageCount,
                 };
-                if (!string.IsNullOrEmpty(dto.Tags))
+                if (dto.Tags!=null && dto.Tags.Any())
                 {
-                    List<string> tagNames = dto.Tags.Split(',')
-                        .Select(t => t.Trim().TrimStart('#'))
-                        .Where(t => !string.IsNullOrEmpty(t))
-                        .Distinct().ToList();
-                    foreach (var tagName in tagNames)
+                    foreach (var tagName in dto.Tags)
                     {
                         string tagSlug = StringHelpers.GenerateSlug(tagName);
                         var existingTag = await _repo.tagsRepo.HasTag(tagSlug, tagName);
@@ -317,7 +308,7 @@ namespace API.Controllers
                     {
                         await _storageService.DeleteFileAsync(document.FileUrl, StorageType.Document);
                     }
-                    string s3ObjectKey = StringHelpers.Create_s3ObjectKey(dto.File.FileName, userId);
+                    string s3ObjectKey = StringHelpers.Create_s3ObjectKey_file(dto.File.FileName, userId);
                     int pageCount = 0;
                     using (var stream = dto.File.OpenReadStream())
                     {

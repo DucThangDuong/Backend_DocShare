@@ -1,11 +1,12 @@
 ﻿using API.DTOs;
+using API.Extensions;
+using Application.DTOs;
 using Application.Interfaces;
 using Application.IServices;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using API.Extensions;
 
 namespace API.Controllers
 {
@@ -16,11 +17,13 @@ namespace API.Controllers
         private readonly IUnitOfWork _repo;
         private readonly IJwtTokenService _generateJwtToken;
         private readonly IGoogleAuthService _authService;
-        public AuthController(IUnitOfWork repo , IJwtTokenService jwttoken, IGoogleAuthService authService)
+        private readonly IStorageService _storageService;
+        public AuthController(IUnitOfWork repo , IJwtTokenService jwttoken, IGoogleAuthService authService, IStorageService storageService)
         {
             _repo = repo;
             _generateJwtToken = jwttoken;
             _authService = authService;
+            _storageService = storageService;
         }
         //post
         [EnableRateLimiting("ip_auth")]
@@ -42,22 +45,17 @@ namespace API.Controllers
                 var accessToken = _generateJwtToken.GenerateAccessToken(userEntity.Id, userEntity.Email!, role);
                 var refreshToken = _generateJwtToken.GenerateRefreshToken();
 
-                await _repo.usersRepo.SaveRefreshTokenAsync(userEntity.Id, refreshToken.Token, refreshToken.ExpiryDate);
+                userEntity.RefreshToken = refreshToken.Token;
+                userEntity.RefreshTokenExpiryTime = refreshToken.ExpiryDate;
+                userEntity.LoginProvider = "Custom";
+
                 SetRefreshTokenCookie(refreshToken.Token, refreshToken.ExpiryDate);
-                var userResponse = new
-                {
-                    Id = userEntity.Id,
-                    Email = userEntity.Email,
-                    HoTen = userEntity.FullName,
-                    Role = role
-                };
                 await _repo.SaveAllAsync();
                 return Ok(new
                 {
                     success = true,
                     message = "Đăng nhập thành công",
                     accessToken = accessToken,
-                    user = userResponse
                 });
             }
             catch (Exception ex)
@@ -94,20 +92,7 @@ namespace API.Controllers
                 {
                     return Conflict(new { message = "Email này đã tồn tại" });
                 }
-                string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-                string username = request.Email.Substring(0, request.Email.LastIndexOf('@'));
-                var newUser = new User
-                {
-                    Email = request.Email,
-                    PasswordHash = passwordHash,
-                    Username = username,
-                    FullName = request.Fullname,
-                    CreatedAt = DateTime.Now,
-                    Role = "User",
-                    IsActive = true,
-                    AvatarUrl = "default-avatar.jpg",
-                };
-                await _repo.usersRepo.CreateUserAsync(newUser);
+                await _repo.usersRepo.CreateUserCustomAsync(request.Email, request.Password, request.Fullname);
                 await _repo.SaveAllAsync();
                 return Created();
             }
@@ -127,12 +112,12 @@ namespace API.Controllers
             try
             {
                 var result = await _authService.HandleGoogleLoginAsync(model.IdToken);
-
                 if (result.IsSuccess)
                 {
+                    SetRefreshTokenCookie(result.refreshToken.Token, result.refreshToken.ExpiryDate);
                     return Ok(new
                     {
-                        accesstoken = result.CustomJwtToken
+                        accessToken = result.CustomJwtToken
                     });
                 }
                 else

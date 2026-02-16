@@ -26,10 +26,6 @@ namespace Infrastructure.Repositories
                 {
                     _context.DocumentVotes.Remove(existingVote);
                 }
-                else if (existingVote.IsLike == isLike)
-                {
-                    _context.DocumentVotes.Remove(existingVote);
-                }
                 else
                 {
                     existingVote.IsLike = isLike.Value;

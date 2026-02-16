@@ -9,14 +9,13 @@ namespace Application.DTOs
     public class ResUserPublicDto
     {
         public int id { get; set; }
-        public string username { get; set; }
-        public string fullname { get; set; }
-        public string avatarurl { get; set; }
-        public DateTime createdat { get; set; }
+        public string username { get; set; } = null!;
+        public string fullname { get; set; } = null!;
+        public string? avatarUrl{ get; set; }
     }
     public class ResUserPrivate : ResUserPublicDto
     {
-        public string email { get; set; }
+        public string? email { get; set; }
         public long storagelimit { get; set; }
         public long usedstorage { get; set; }
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,7 @@ namespace Application.DTOs
         public bool IsSuccess { get; set; }
         public string? CustomJwtToken { get; set; }
         public string? ErrorMessage { get; set; }
+        public RefreshToken refreshToken { get; set; } = null!;
     }
     public class RefreshToken
     {

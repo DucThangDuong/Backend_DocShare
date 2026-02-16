@@ -11,7 +11,9 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
+
+    public string? GoogleId { get; set; }
 
     public string? FullName { get; set; }
 
@@ -22,8 +24,11 @@ public partial class User
     public DateTime? RefreshTokenExpiryTime { get; set; }
 
     public string? Role { get; set; }
+    public string? LoginProvider { get; set; }
 
-    public string? AvatarUrl { get; set; }
+    public string? CustomAvatar { get; set; }
+
+    public string? GoogleAvatar { get; set; }
 
     public bool? IsActive { get; set; }
 

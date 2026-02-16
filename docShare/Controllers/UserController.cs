@@ -16,10 +16,12 @@ namespace API.Controllers
     {
         private readonly IUnitOfWork _repo;
         private readonly IStorageService _s3storage;
-        public UserController(IUnitOfWork repo, IStorageService s3storage)
+        private readonly IConfiguration _config;
+        public UserController(IUnitOfWork repo, IStorageService s3storage, IConfiguration config)
         {
             _repo = repo;
             _s3storage = s3storage;
+            _config = config;
         }
         // get
         [HttpGet("user/storageDoc")]
@@ -39,7 +41,6 @@ namespace API.Controllers
         [HttpGet("user/privateprofile")]
         [Authorize]
         [EnableRateLimiting("read_limit")]
-
         public async Task<IActionResult> PrivateProfile()
         {
             int userId = User.GetUserId();
@@ -49,6 +50,7 @@ namespace API.Controllers
             {
                 return NotFound(new { message = "Không tìm thấy thông tin người dùng." });
             }
+            userPrivateProfile.avatarUrl = StringHelpers.GetFinalAvatarUrl(userPrivateProfile.avatarUrl ?? "");
             return Ok(userPrivateProfile);
         }
         //patch
@@ -92,7 +94,7 @@ namespace API.Controllers
                 if (avatar != null && avatar.Length > 0)
                 {
                     var ext = Path.GetExtension(avatar.FileName);
-                    avatarFileName = $"{userId}_{ext}";
+                    avatarFileName = StringHelpers.Create_s3ObjectKey_avatar(ext, userId);
                     using var stream = avatar.OpenReadStream();
                     await _s3storage.UploadFileAsync(stream, avatarFileName, avatar.ContentType, StorageType.Avatar);
                     await _repo.usersRepo.UpdateUserAvatar(userId, avatarFileName);

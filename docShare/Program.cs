@@ -1,11 +1,12 @@
-﻿using API.Services;
+﻿using Amazon.S3;
+using API.Extensions;
+using API.Services;
 using Application.Interfaces;
 using Application.IServices;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
-using Amazon.S3;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -185,6 +186,7 @@ namespace API
             builder.Services.AddHostedService<RabbitMQWorker>();
 
             var app = builder.Build();
+            StringHelpers.Initialize(builder.Configuration);
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");

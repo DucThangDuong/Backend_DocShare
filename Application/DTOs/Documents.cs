@@ -17,7 +17,8 @@ namespace Application.DTOs
         public string? Status { get; set; }
         public DateTime? CreatedAt { get; set; }
         public string? FullName { get; set; }
-        public string? AvatarUrl { get; set; }
+        public string? CustomAvatar { get; set; }
+        public string? GoogleAvatar { get; set; }
         public int? ViewCount { get; set; }
         public int? LikeCount { get; set; }
         public int? DislikeCount { get; set; }

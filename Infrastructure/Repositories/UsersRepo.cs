@@ -1,23 +1,18 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using Azure.Core;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-
 namespace Infrastructure.Repositories
 {
     public class UsersRepo : IUsers
     {
         private readonly DocShareContext _context;
+
         public UsersRepo(DocShareContext context)
         {
             _context = context;
         }
-
-        public async Task CreateUserAsync(User user)
-        {
-            await _context.Users.AddAsync(user);
-        }
-
         public async Task<bool> ExistEmailAsync(string email)
         {
             return await _context.Users.AsNoTracking().AnyAsync(e => e.Email == email);
@@ -25,7 +20,7 @@ namespace Infrastructure.Repositories
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.Email == email);
+            return await _context.Users.FirstOrDefaultAsync(e => e.Email == email);
         }
 
         public async Task<User?> GetUserAsync(int id)
@@ -48,16 +43,6 @@ namespace Infrastructure.Repositories
             }
         }
 
-        public async Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiryDate)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id ==userId );
-
-            if (user != null)
-            {
-                user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = expiryDate;
-            }
-        }
         public async Task<ResUserStorageFileDto?> GetUserStorageStatsAsync(int userId)
         {
             return await _context.Users
@@ -82,10 +67,9 @@ namespace Infrastructure.Repositories
                     email = u.Email,
                     username = u.Username,
                     fullname = u.FullName,
-                    createdat = u.CreatedAt,
                     storagelimit = u.StorageLimit,
                     usedstorage = u.UsedStorage,
-                    avatarurl=u.AvatarUrl ?? ""
+                    avatarUrl = u.LoginProvider == "Custom" ? u.CustomAvatar : u.GoogleAvatar,
                 })
                 .FirstOrDefaultAsync();
         }
@@ -110,7 +94,7 @@ namespace Infrastructure.Repositories
         public async Task UpdateUserAvatar(int userId, string avatarFileName)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            user!.AvatarUrl = avatarFileName;
+            user!.CustomAvatar = avatarFileName;
         }
 
         public async Task<bool> ExistUserNameAsync(string username)
@@ -141,6 +125,39 @@ namespace Infrastructure.Repositories
         public async Task<bool> HasUser(int userId)
         {
             return await _context.Users.AnyAsync(e => e.Id == userId);
+        }
+
+        public async Task CreateUserCustomAsync(string email, string password, string fullname)
+        {
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            string username = email.Substring(0, email.LastIndexOf('@'));
+            User? newuser = await _context.Users.FirstOrDefaultAsync(e => e.Email == email);
+            if (newuser != null)
+            {
+                newuser.PasswordHash = passwordHash;
+                newuser.CustomAvatar = "default-avatar.jpg";
+            }
+            else
+            {
+                var newUser = new User
+                {
+                    Email = email,
+                    PasswordHash = passwordHash,
+                    Username = username,
+                    FullName = fullname,
+                    CreatedAt = DateTime.Now,
+                    Role = "User",
+                    IsActive = true,
+                    LoginProvider = "Custom"
+                };
+                await _context.Users.AddAsync(newUser);
+            }
+        }
+
+
+        public async Task CreateUserAsync(User user)
+        {
+            await _context.Users.AddAsync(user);
         }
     }
 }

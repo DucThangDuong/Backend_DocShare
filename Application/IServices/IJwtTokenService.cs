@@ -10,7 +10,6 @@ namespace Application.IServices
 {
     public interface IJwtTokenService
     {
-        public string GenerateToken(ClaimsPrincipal principal);
         public string GenerateAccessToken(int userId, string email, string role);
         public RefreshToken GenerateRefreshToken();
     }
