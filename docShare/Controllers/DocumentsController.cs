@@ -13,7 +13,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace API.Controllers
 {
-    [Route("api")]
+    [Route("api/documents")]
     [ApiController]
     public class DocumentsController : ControllerBase
     {
@@ -32,7 +32,7 @@ namespace API.Controllers
 
         //get 
         [Authorize]
-        [HttpGet("documents")]
+        [HttpGet]
         [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> GetDocsOfUser([FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
@@ -51,7 +51,7 @@ namespace API.Controllers
             }
         }
         
-        [HttpGet("document/detail/{docid}")]
+        [HttpGet("{docid}")]
         [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> GetDetailDoc(int docid)
         {
@@ -74,12 +74,12 @@ namespace API.Controllers
             {
                 return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
-
+            result.AvatarUrl = StringHelpers.GetFinalAvatarUrl(result.AvatarUrl ?? "");
             return Ok(result);
         }
 
         [Authorize]
-        [HttpGet("document/stats")]
+        [HttpGet("stats")]
         public async Task<IActionResult> GetUserStats()
         {
             int userId = User.GetUserId();
@@ -110,7 +110,7 @@ namespace API.Controllers
         }
         //post
 
-        [HttpPost("document/check")]
+        [HttpPost("scan")]
         [Authorize]
         public async Task<IActionResult> PostCheckDocumentFile([FromForm] ReqCreateDocumentDTO dto)
         {
@@ -145,7 +145,7 @@ namespace API.Controllers
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
-        [HttpPost("document")]
+        [HttpPost]
         [Authorize]
         [EnableRateLimiting("upload_limit")]
         public async Task<IActionResult> PostDocument([FromForm] ReqCreateDocumentDTO dto)
@@ -238,7 +238,7 @@ namespace API.Controllers
             }
         }
         //patch
-        [HttpPatch("document/{docid}/movetotrash")]
+        [HttpPatch("{docid}/trash")]
         [Authorize]
         [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> PatchMoveToTrash(int docid, [FromBody] ReqMoveToTrashDTO isdelete)
@@ -272,7 +272,7 @@ namespace API.Controllers
             }
         }
         [Authorize]
-        [HttpPatch("document/{docid}")]
+        [HttpPatch("{docid}")]
         [EnableRateLimiting("upload_limit")]
         public async Task<IActionResult> UpdateDocument(int docid, [FromForm] ReqUpdateDocumentDto dto)
         {
@@ -381,7 +381,7 @@ namespace API.Controllers
         
         //delete
         [Authorize]
-        [HttpDelete("document/{docid}/fileUrl")]
+        [HttpDelete("{docid}/file")]
         public async Task<IActionResult> DeleteDocumentFileUrl(int docid)
         {
             int userId = User.GetUserId();

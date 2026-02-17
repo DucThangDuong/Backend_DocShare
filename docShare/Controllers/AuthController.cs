@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers
 {
-    [Route("api")]
+    [Route("api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -101,7 +101,7 @@ namespace API.Controllers
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
-        [HttpPost("google-login")]
+        [HttpPost("google")]
         [EnableRateLimiting("ip_auth")]
         public async Task<IActionResult> GoogleLogin([FromBody] ReqGoogleLoginDTO model)
         {

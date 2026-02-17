@@ -7,7 +7,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace API.Controllers
 {
-    [Route("api")]
+    [Route("api/tags")]
     [ApiController]
     public class TagController : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace API.Controllers
             _cache = cache;
         }
 
-        [HttpGet("tags")]
+        [HttpGet]
         public async Task<IActionResult> GetTag([FromQuery] int take = 10)
         {
             string cacheKey = $"tags";
@@ -38,7 +38,7 @@ namespace API.Controllers
             return Ok(tags);
         }
 
-        [HttpGet("tags/documents")]
+        [HttpGet("documents")]
         public async Task<IActionResult> GetDocumentsByTag([FromQuery] int? tagid, [FromQuery] int skip, [FromQuery] int take)
         {
             string cacheKey = $"tag_docs_{tagid}_{skip}_{take}";

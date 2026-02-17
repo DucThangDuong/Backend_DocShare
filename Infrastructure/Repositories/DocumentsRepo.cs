@@ -78,14 +78,13 @@ namespace Infrastructure.Repositories
                     Title = d.Title,
                     SizeInBytes = d.SizeInBytes,
                     Status = d.Status,
-                    CustomAvatar = d.Uploader.CustomAvatar,
-                    GoogleAvatar = d.Uploader.GoogleAvatar,
+                    AvatarUrl = d.Uploader.LoginProvider == "Custom" ? d.Uploader.CustomAvatar : d.Uploader.GoogleAvatar,
                     FullName = d.Uploader.FullName,
                     DislikeCount = d.DislikeCount,
                     LikeCount = d.LikeCount,
                     ViewCount = d.ViewCount,
-                    Thumbnail=d.Thumbnail,
-                    PageCount=d.PageCount,
+                    Thumbnail = d.Thumbnail,
+                    PageCount = d.PageCount,
                     IsLiked = _context.DocumentVotes
                                 .Where(v => v.DocumentId == d.Id && v.UserId == currentUserId)
                                 .Select(v => (bool?)v.IsLike).FirstOrDefault(),

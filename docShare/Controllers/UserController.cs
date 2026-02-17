@@ -10,7 +10,7 @@ using System.Security.Claims;
 
 namespace API.Controllers
 {
-    [Route("api")]
+    [Route("api/user")]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -24,7 +24,7 @@ namespace API.Controllers
             _config = config;
         }
         // get
-        [HttpGet("user/storageDoc")]
+        [HttpGet("me/storage")]
         [Authorize]
         [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> FileDoc()
@@ -38,7 +38,7 @@ namespace API.Controllers
             }
             return Ok(userStorageInfo);
         }
-        [HttpGet("user/privateprofile")]
+        [HttpGet("me/profile")]
         [Authorize]
         [EnableRateLimiting("read_limit")]
         public async Task<IActionResult> PrivateProfile()
@@ -54,7 +54,7 @@ namespace API.Controllers
             return Ok(userPrivateProfile);
         }
         //patch
-        [HttpPatch("user/update/profile")]
+        [HttpPatch("me/profile")]
         [Authorize]
         [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> UpdatePrivateProfile(ReqUserUpdateDto reqUserUpdateDto)
@@ -79,7 +79,7 @@ namespace API.Controllers
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
-        [HttpPatch("user/update/avatar")]
+        [HttpPatch("me/avatar")]
         [Authorize]
         [EnableRateLimiting("upload_limit")]
         public async Task<IActionResult> UpdateAvatar(IFormFile avatar)
@@ -108,7 +108,7 @@ namespace API.Controllers
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
-        [HttpPatch("user/update/username")]
+        [HttpPatch("me/username")]
         [Authorize]
         [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> UpdateUsername(ReqUpdateUserNameDto dto)
@@ -137,7 +137,7 @@ namespace API.Controllers
                 return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
             }
         }
-        [HttpPatch("user/update/password")]
+        [HttpPatch("me/password")]
         [Authorize]
         [EnableRateLimiting("export_file_light")]
         public async Task<IActionResult> UpdatePassword([FromBody] ReqUpdatePasswordDto dto)
