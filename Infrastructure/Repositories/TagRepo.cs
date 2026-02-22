@@ -48,12 +48,22 @@ namespace Infrastructure.Repositories
             return await _context.Tags.FirstOrDefaultAsync(e => e.Name == tag && e.Slug == tagSlug);
         }
 
-        public async Task<List<Tag>> GetTags(int take)
+        public async Task<List<TagsDto>> GetTags(int take)
         {
-            return await _context.Tags.AsNoTracking().Take(take).ToListAsync();
+            return await _context.Tags
+                .AsNoTracking()
+                .OrderByDescending(t => t.Documents.Count)
+                .Take(take)
+                .Select(t => new TagsDto
+                {
+                    Id = t.Id,
+                    Name = t.Name,
+                    count = t.Documents.Count
+                })
+                .ToListAsync();
         }
 
-        public async Task<List<ResDocumentDto>> GetDocumentByTagID(int? tagid, int skip, int take)
+        public async Task<List<ResSummaryDocumentDto>> GetDocumentByTagID(int? tagid, int skip, int take)
         {
             var query = _context.Documents.AsNoTracking();
             query = query.Where(e => e.FileUrl != null && e.FileUrl != "");
@@ -67,20 +77,12 @@ namespace Infrastructure.Repositories
             query = query.OrderByDescending(d => d.CreatedAt).Skip(skip).Take(take);
 
             return await query
-                 .Select(d => new ResDocumentDto
+                 .Select(d => new ResSummaryDocumentDto
                  {
                      Id = d.Id,
                      CreatedAt = d.CreatedAt,
-                     Description = d.Description,
-                     FileUrl = d.FileUrl,
                      Title = d.Title,
-                     SizeInBytes = d.SizeInBytes,
-                     Status = d.Status,
-                     AvatarUrl = d.Uploader.LoginProvider == "Custom" ? d.Uploader.CustomAvatar : d.Uploader.GoogleAvatar,
-                     FullName = d.Uploader.FullName,
-                     DislikeCount = d.DislikeCount,
                      LikeCount = d.LikeCount,
-                     ViewCount = d.ViewCount,
                      Thumbnail = d.Thumbnail,
                      PageCount = d.PageCount,
                      Tags = d.Tags.Select(t => t.Name).ToList(),

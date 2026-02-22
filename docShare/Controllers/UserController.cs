@@ -6,6 +6,7 @@ using Application.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace API.Controllers
@@ -68,11 +69,8 @@ namespace API.Controllers
                 await _repo.usersRepo.UpdateUserProfile(userId, reqUserUpdateDto.Email, reqUserUpdateDto.Password
                     , reqUserUpdateDto.FullName);
                 await _repo.SaveAllAsync();
-                var updatedProfile = await _repo.usersRepo.GetUserPrivateProfileAsync(userId);
-                return Ok(new
-                {
-                    data = updatedProfile
-                });
+                ResUserPrivate? updatedProfile = await _repo.usersRepo.GetUserPrivateProfileAsync(userId);
+                return Ok(updatedProfile);
             }
             catch (Exception ex)
             {
@@ -164,9 +162,6 @@ namespace API.Controllers
                     {
                         return BadRequest(new { message = "Mật khẩu mới không được trùng với mật khẩu cũ." });
                     }
-                }
-                else
-                {
                 }
                 await _repo.usersRepo.UpdateUserPassword(dto.NewPassword, userId);
                 await _repo.SaveAllAsync();

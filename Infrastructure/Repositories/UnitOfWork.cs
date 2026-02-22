@@ -11,6 +11,8 @@ namespace Infrastructure.Repositories
         public ITags tagsRepo { get; private set; }
         public IUserActivity userActivityRepo { get; private set; }
 
+        public IUniversitites universititesRepo {  get; private set; }
+
         public UnitOfWork(DocShareContext context)
         {
             _context = context;
@@ -18,6 +20,7 @@ namespace Infrastructure.Repositories
             documentsRepo = new DocumentsRepo(context);
             tagsRepo = new TagRepo(context);
             userActivityRepo = new UserActivity(context);
+            universititesRepo =new UniversitiesRepo(context);
         }
         public async Task SaveAllAsync()
         {

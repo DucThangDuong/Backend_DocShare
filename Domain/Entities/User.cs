@@ -24,6 +24,7 @@ public partial class User
     public DateTime? RefreshTokenExpiryTime { get; set; }
 
     public string? Role { get; set; }
+
     public string? LoginProvider { get; set; }
 
     public string? CustomAvatar { get; set; }
@@ -36,9 +37,13 @@ public partial class User
 
     public long UsedStorage { get; set; }
 
+    public int? UniversityId { get; set; }
+
     public virtual ICollection<DocumentVote> DocumentVotes { get; set; } = new List<DocumentVote>();
 
     public virtual ICollection<Document> Documents { get; set; } = new List<Document>();
 
     public virtual ICollection<SavedDocument> SavedDocuments { get; set; } = new List<SavedDocument>();
+
+    public virtual University? University { get; set; }
 }

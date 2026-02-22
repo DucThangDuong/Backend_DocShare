@@ -1,28 +1,36 @@
-﻿using Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Application.DTOs
+﻿namespace Application.DTOs
 {
-    public class ResDocumentDto
+    public class ResDocumentDetailEditDto : ResDocumentBaseDto
     {
-        public long Id { get; set; }
-        public string Title { get; set; } = null!;
         public string? Description { get; set; }
-        public string FileUrl { get; set; } = null!;
         public long SizeInBytes { get; set; }
         public string? Status { get; set; }
-        public DateTime? CreatedAt { get; set; }
+        public string FileUrl { get; set; } = null!;
+        public DateTime? UpdatedAt { get; set; }
+        public int? UniversitySectionId { get; set; }
+        public int? UniversityId { get; set; }
+    }
+    public class ResDocumentDetailDto : ResDocumentBaseDto
+    {
+        public string? Description { get; set; }
+        public string FileUrl { get; set; } = null!;
+        public int? LikeCount { get; set; }
+        public bool? IsLiked { get; set; }
         public string? FullName { get; set; }
         public string? AvatarUrl { get; set; }
         public int? ViewCount { get; set; }
-        public int? LikeCount { get; set; }
-        public int? DislikeCount { get; set; }
-        public bool? IsLiked { get; set; } 
         public bool? IsSaved { get; set; }
+
+    }
+    public class ResSummaryDocumentDto:ResDocumentBaseDto
+    {
+        public int? LikeCount { get; set; }
+    }
+    public class ResDocumentBaseDto
+    {
+        public long Id { get; set; }
+        public string Title { get; set; } = null!;
+        public DateTime? CreatedAt { get; set; }
         public string? Thumbnail { get; set; }
         public int? PageCount { get; set; }
         public List<string>? Tags { get; set; }

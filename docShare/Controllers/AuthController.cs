@@ -17,13 +17,11 @@ namespace API.Controllers
         private readonly IUnitOfWork _repo;
         private readonly IJwtTokenService _generateJwtToken;
         private readonly IGoogleAuthService _authService;
-        private readonly IStorageService _storageService;
-        public AuthController(IUnitOfWork repo , IJwtTokenService jwttoken, IGoogleAuthService authService, IStorageService storageService)
+        public AuthController(IUnitOfWork repo , IJwtTokenService jwttoken, IGoogleAuthService authService)
         {
             _repo = repo;
             _generateJwtToken = jwttoken;
             _authService = authService;
-            _storageService = storageService;
         }
         //post
         [EnableRateLimiting("ip_auth")]

@@ -23,6 +23,8 @@ public partial class Document
 
     public int? CategoryId { get; set; }
 
+    public int? UniversitySectionId { get; set; }
+
     public string? Status { get; set; }
 
     public byte? IsDeleted { get; set; }
@@ -44,6 +46,8 @@ public partial class Document
     public virtual ICollection<DocumentVote> DocumentVotes { get; set; } = new List<DocumentVote>();
 
     public virtual ICollection<SavedDocument> SavedDocuments { get; set; } = new List<SavedDocument>();
+
+    public virtual UniversitySection? UniversitySection { get; set; }
 
     public virtual User Uploader { get; set; } = null!;
 

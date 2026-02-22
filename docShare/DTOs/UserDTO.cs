@@ -1,4 +1,6 @@
-﻿namespace API.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace API.DTOs
 {
     public class ReqUserUpdateDto
     {
@@ -12,8 +14,12 @@
     }
     public class ReqUpdatePasswordDto
     {
-        public string? OldPassword { get; set; }
-        public string? NewPassword { get; set; }
+        public string OldPassword { get; set; } = null!;
+        [Required]
+        public string NewPassword { get; set; } = null!;
     }
+    public class ReqSetPassword
+    {
 
+    }
 }

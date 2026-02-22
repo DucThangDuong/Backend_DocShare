@@ -41,7 +41,7 @@ namespace API.Controllers
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
-                List<ResDocumentDto> response = await _repo.documentsRepo.GetDocsByUserIdPagedAsync(userId, skip, take);
+                List<ResDocumentDetailEditDto> response = await _repo.documentsRepo.GetDocsByUserIdPagedAsync(userId, skip, take);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -56,10 +56,8 @@ namespace API.Controllers
         public async Task<IActionResult> GetDetailDoc(int docid)
         {
             int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-
-            string cacheKey = $"doc_detail_{docid}_{userId}";
-            if (_cache.TryGetValue(cacheKey, out ResDocumentDto? cachedResult))
+            string cacheKey = $"doc_detail_{docid}";
+            if (_cache.TryGetValue(cacheKey, out ResDocumentDetailDto? cachedResult))
             {
                 return Ok(cachedResult);
             }
@@ -69,12 +67,30 @@ namespace API.Controllers
             {
                 return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
-            ResDocumentDto? result = await _repo.documentsRepo.GetDocByUserIDAsync(docid, userId);
+            ResDocumentDetailDto? result = await _repo.documentsRepo.GetDocByUserIDAsync(docid, userId);
             if (result == null)
             {
                 return NotFound(new { message = "Không tìm thấy tài liệu." });
             }
             result.AvatarUrl = StringHelpers.GetFinalAvatarUrl(result.AvatarUrl ?? "");
+            return Ok(result);
+        }
+        [HttpGet("{docid}/edit")]
+        [Authorize]
+        public async Task<IActionResult> GetDetailEditDoc(int docid)
+        {
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            bool ishas = await _repo.documentsRepo.HasDocument(docid);
+            if (!ishas)
+            {
+                return NotFound(new { message = "Không tìm thấy tài liệu." });
+            }
+            ResDocumentDetailEditDto? result = await _repo.documentsRepo.GetDocumentDetailEditAsync(userId, docid);
+            if (result == null)
+            {
+                return NotFound(new { message = "Không tìm thấy tài liệu." });
+            }
             return Ok(result);
         }
 
@@ -110,41 +126,6 @@ namespace API.Controllers
         }
         //post
 
-        [HttpPost("scan")]
-        [Authorize]
-        public async Task<IActionResult> PostCheckDocumentFile([FromForm] ReqCreateDocumentDTO dto)
-        {
-            if (dto.File == null || dto.File.Length == 0)
-                return BadRequest(new { message = "Vui lòng chọn file." });
-            if (Path.GetExtension(dto.File.FileName).ToLower() != ".pdf")
-                return BadRequest(new { message = "Chỉ chấp nhận file PDF." });
-
-            int userId = User.GetUserId();
-            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-            try
-            {
-                string s3ObjectKey = StringHelpers.Create_s3ObjectKey_file(dto.File.FileName, userId);
-                bool isExist = await _storageService.FileExistsAsync(s3ObjectKey, StorageType.Document);
-                if (isExist)
-                {
-                    return BadRequest($"File '{dto.File.FileName}' đã tồn tại trên hệ thống. Vui lòng đổi tên hoặc kiểm tra lại.");
-                }
-                using (var stream = dto.File.OpenReadStream())
-                {
-                    await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf", StorageType.Document);
-                }
-                await _rabbitMQService.SendFileToScan(s3ObjectKey, $"{userId}", $"{dto.Title}");
-                return Ok(new
-                {
-                    message = "File đã được tải lên và đang chờ quét.",
-                });
-
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
-            }
-        }
         [HttpPost]
         [Authorize]
         [EnableRateLimiting("upload_limit")]
@@ -196,6 +177,18 @@ namespace API.Controllers
                     CreatedAt = DateTime.UtcNow,
                     PageCount = pageCount,
                 };
+                if (dto.UniversityId != null && dto.UniversitySectionId!= null)
+                {
+                    var ishas = await _repo.universititesRepo.HasUniSection(dto.UniversityId.Value, dto.UniversitySectionId.Value);
+                    if(!ishas)
+                    {
+                        return BadRequest(new { message = "Khoa/Ngành không hợp lệ." });
+                    }
+                    else
+                    {
+                        newDoc.UniversitySectionId = dto.UniversitySectionId.Value;
+                    }
+                }
                 if (dto.Tags!=null && dto.Tags.Any())
                 {
                     foreach (var tagName in dto.Tags)
@@ -230,6 +223,41 @@ namespace API.Controllers
                 };
                 await _rabbitMQService.SendThumbnailRequest(thumbMsg);
                 return Created();
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+            }
+        }
+        [HttpPost("scan")]
+        [Authorize]
+        public async Task<IActionResult> PostCheckDocumentFile([FromForm] ReqCreateDocumentDTO dto)
+        {
+            if (dto.File == null || dto.File.Length == 0)
+                return BadRequest(new { message = "Vui lòng chọn file." });
+            if (Path.GetExtension(dto.File.FileName).ToLower() != ".pdf")
+                return BadRequest(new { message = "Chỉ chấp nhận file PDF." });
+
+            int userId = User.GetUserId();
+            if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            try
+            {
+                string s3ObjectKey = StringHelpers.Create_s3ObjectKey_file(dto.File.FileName, userId);
+                bool isExist = await _storageService.FileExistsAsync(s3ObjectKey, StorageType.Document);
+                if (isExist)
+                {
+                    return BadRequest($"File '{dto.File.FileName}' đã tồn tại trên hệ thống. Vui lòng đổi tên hoặc kiểm tra lại.");
+                }
+                using (var stream = dto.File.OpenReadStream())
+                {
+                    await _storageService.UploadFileAsync(stream, s3ObjectKey, "application/pdf", StorageType.Document);
+                }
+                await _rabbitMQService.SendFileToScan(s3ObjectKey, $"{userId}", $"{dto.Title}");
+                return Ok(new
+                {
+                    message = "File đã được tải lên và đang chờ quét.",
+                });
 
             }
             catch (Exception ex)
@@ -338,6 +366,22 @@ namespace API.Controllers
                         BucketName = "pdf-storage"
                     };
                     await _rabbitMQService.SendThumbnailRequest(thumbMsg);
+                }
+                if (dto.UniversitySectionId != null)
+                {
+                    var ishas = await _repo.universititesRepo.HasUniSection(dto.UniversityId.Value, dto.UniversitySectionId.Value);
+                    if (!ishas)
+                    {
+                        return BadRequest(new { message = "Khoa/Ngành không hợp lệ." });
+                    }
+                    else
+                    {
+                        document.UniversitySectionId = dto.UniversitySectionId.Value;
+                    }
+                }
+                if (dto.UniversityId == null)
+                {
+                    document.UniversitySectionId = null;
                 }
                 if (dto.Tags == null)
                 {

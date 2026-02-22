@@ -11,6 +11,8 @@ namespace API.DTOs
         public List<string>? Tags { get; set; }
         public string? Status { get; set; }
         public string? userId { get; set; }
+        public int? UniversityId { get; set; }
+        public int? UniversitySectionId { get; set; }
     }
     public class ReqMoveToTrashDTO
     {
@@ -23,5 +25,7 @@ namespace API.DTOs
         public string? Description { get; set; }
         public List<string>? Tags { get; set; }
         public string? Status { get; set; }
+        public int? UniversityId { get; set; }
+        public int? UniversitySectionId { get; set; }
     }
 }

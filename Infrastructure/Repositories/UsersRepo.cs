@@ -66,12 +66,14 @@ namespace Infrastructure.Repositories
                     id = u.Id,
                     email = u.Email,
                     username = u.Username,
-                    fullname = u.FullName,
+                    fullname = u.FullName ?? string.Empty,
                     storagelimit = u.StorageLimit,
                     usedstorage = u.UsedStorage,
                     avatarUrl = u.LoginProvider == "Custom" ? u.CustomAvatar : u.GoogleAvatar,
-                })
-                .FirstOrDefaultAsync();
+                    UniversityId = u.UniversityId,
+                    UniversityName = u.University != null ? u.University.Name : null,
+                    hasPassword = !string.IsNullOrEmpty(u.PasswordHash)
+                }).FirstOrDefaultAsync();
         }
 
         public async Task UpdateUserProfile(int userId, string? email, string? password, string? fullname)
@@ -153,8 +155,6 @@ namespace Infrastructure.Repositories
                 await _context.Users.AddAsync(newUser);
             }
         }
-
-
         public async Task CreateUserAsync(User user)
         {
             await _context.Users.AddAsync(user);

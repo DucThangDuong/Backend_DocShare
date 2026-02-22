@@ -16,14 +16,12 @@ namespace API.Services
         public override async Task OnConnectedAsync()
         {
             var userId = Context.UserIdentifier;
-            _logger.LogInformation("SignalR: User '{UserId}' connected with ID {ConnectionId}", userId, Context.ConnectionId);
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var userId = Context.UserIdentifier;
-            _logger.LogInformation("SignalR: User '{UserId}' disconnected", userId);
             await base.OnDisconnectedAsync(exception);
         }
     }

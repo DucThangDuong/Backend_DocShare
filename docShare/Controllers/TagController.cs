@@ -25,7 +25,7 @@ namespace API.Controllers
         {
             string cacheKey = $"tags";
 
-            if (!_cache.TryGetValue(cacheKey, out List<Tag>? tags))
+            if (!_cache.TryGetValue(cacheKey, out List<TagsDto>? tags))
             {
                 tags = await _repo.tagsRepo.GetTags(take);
 
@@ -42,12 +42,9 @@ namespace API.Controllers
         public async Task<IActionResult> GetDocumentsByTag([FromQuery] int? tagid, [FromQuery] int skip, [FromQuery] int take)
         {
             string cacheKey = $"tag_docs_{tagid}_{skip}_{take}";
-            Console.WriteLine(cacheKey);
-
-            if (!_cache.TryGetValue(cacheKey, out List<ResDocumentDto>? result))
+            if (!_cache.TryGetValue(cacheKey, out List<ResSummaryDocumentDto>? result))
             {
                 result = await _repo.tagsRepo.GetDocumentByTagID(tagid, skip, take);
-
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
                     .SetSlidingExpiration(TimeSpan.FromMinutes(2));

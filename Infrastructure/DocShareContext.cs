@@ -25,6 +25,10 @@ public partial class DocShareContext : DbContext
 
     public virtual DbSet<Tag> Tags { get; set; }
 
+    public virtual DbSet<University> Universities { get; set; }
+
+    public virtual DbSet<UniversitySection> UniversitySections { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
 
@@ -32,9 +36,9 @@ public partial class DocShareContext : DbContext
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC07FD676EC0");
+            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC077856642D");
 
-            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6CDF4709E").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB69E95E6B9").IsUnique();
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -45,7 +49,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Document>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC079EC54495");
+            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC075B07010E");
 
             entity.ToTable(tb =>
                 {
@@ -78,6 +82,11 @@ public partial class DocShareContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_Docs_Category");
 
+            entity.HasOne(d => d.UniversitySection).WithMany(p => p.Documents)
+                .HasForeignKey(d => d.UniversitySectionId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Docs_UniSection");
+
             entity.HasOne(d => d.Uploader).WithMany(p => p.Documents)
                 .HasForeignKey(d => d.UploaderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -94,14 +103,14 @@ public partial class DocShareContext : DbContext
                         .HasConstraintName("FK_DocTags_Doc"),
                     j =>
                     {
-                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE920957C3D2D33");
+                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE92095A36A6207");
                         j.ToTable("DocumentTags");
                     });
         });
 
         modelBuilder.Entity<DocumentVote>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC13C5BE9B");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC417DBE7F");
 
             entity.ToTable(tb => tb.HasTrigger("trg_UpdateVoteCounts"));
 
@@ -121,7 +130,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<SavedDocument>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BCEBBE6891");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BCC6D2C8D6");
 
             entity.Property(e => e.SavedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -139,7 +148,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC0794D2C9DF");
+            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC07E3D70533");
 
             entity.HasIndex(e => e.Slug, "IX_Tags_Slug");
 
@@ -149,13 +158,39 @@ public partial class DocShareContext : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<University>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Universi__3214EC0797B0DC53");
+
+            entity.HasIndex(e => e.Code, "UQ__Universi__A25C5AA77F08895A").IsUnique();
+
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<UniversitySection>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Universi__3214EC07B29CBCA4");
+
+            entity.HasIndex(e => e.UniversityId, "IX_UniversitySections_UniversityId");
+
+            entity.Property(e => e.Name).HasMaxLength(200);
+
+            entity.HasOne(d => d.University).WithMany(p => p.UniversitySections)
+                .HasForeignKey(d => d.UniversityId)
+                .HasConstraintName("FK_Sections_Uni");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07C25C7CF7");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07B1D8C1DA");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E490C5E8E5").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E43AEF9BE3").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534BDE74D1A").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534B1CA6F9E").IsUnique();
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -175,7 +210,7 @@ public partial class DocShareContext : DbContext
                 .HasMaxLength(255)
                 .IsUnicode(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e=>e.LoginProvider)
+            entity.Property(e => e.LoginProvider)
                 .HasMaxLength(20)
                 .IsUnicode(false);
             entity.Property(e => e.PasswordHash)
@@ -193,6 +228,11 @@ public partial class DocShareContext : DbContext
             entity.Property(e => e.Username)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.University).WithMany(p => p.Users)
+                .HasForeignKey(d => d.UniversityId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Users_Universities");
         });
 
         OnModelCreatingPartial(modelBuilder);

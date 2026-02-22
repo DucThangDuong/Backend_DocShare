@@ -12,6 +12,7 @@ namespace Application.Interfaces
         public IDocuments documentsRepo { get; }
         public ITags tagsRepo { get; }
         public IUserActivity userActivityRepo { get; }
+        public IUniversitites universititesRepo { get; }
         public Task SaveAllAsync();
     }
 }

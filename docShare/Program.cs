@@ -148,6 +148,7 @@ namespace API
             builder.Services.AddScoped<IDocuments, DocumentsRepo>();
             builder.Services.AddScoped<ITags, TagRepo>();
             builder.Services.AddScoped<IUserActivity, UserActivity>();
+            builder.Services.AddScoped<IUniversitites,UniversitiesRepo>();
 
             // Services
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();

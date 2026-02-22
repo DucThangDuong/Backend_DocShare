@@ -44,43 +44,42 @@ namespace Infrastructure.Repositories
             return await _context.Documents.FirstOrDefaultAsync(e => e.Id == docId);
         }
 
-        public async Task<List<ResDocumentDto>> GetDocsByUserIdPagedAsync(int userId, int skip, int take)
+        public async Task<List<ResDocumentDetailEditDto>> GetDocsByUserIdPagedAsync(int userId, int skip, int take)
         {
             return await _context.Documents
                 .AsNoTracking()
                 .Where(d => d.UploaderId == userId && d.IsDeleted == 0)
                 .OrderByDescending(d => d.CreatedAt)
-                .Skip(skip).Take(take).Select(d => new ResDocumentDto
+                .Skip(skip).Take(take).Select(d => new ResDocumentDetailEditDto
                 {
                     Id = d.Id,
-                    SizeInBytes = d.SizeInBytes,
-                    Status = d.Status,
                     CreatedAt = d.CreatedAt,
                     Description = d.Description,
                     FileUrl = d.FileUrl,
                     Title = d.Title,
-                    Thumbnail=d.Thumbnail,
+                    Thumbnail = d.Thumbnail,
                     PageCount = d.PageCount,
+                    SizeInBytes = d.SizeInBytes,
+                    UpdatedAt = d.UpdatedAt,
+                    Status = d.Status,
+                    Tags = d.Tags.Select(e => e.Name).ToList(),
                 }).ToListAsync();
         }
 
-        public async Task<ResDocumentDto?> GetDocByUserIDAsync(int docID, int currentUserId)
+        public async Task<ResDocumentDetailDto?> GetDocByUserIDAsync(int docID, int? currentUserId)
         {
             var query = _context.Documents
                 .AsNoTracking()
                 .Where(e => e.Id == docID)
-                .Select(d => new ResDocumentDto
+                .Select(d => new ResDocumentDetailDto
                 {
                     Id = d.Id,
                     CreatedAt = d.CreatedAt,
                     Description = d.Description,
                     FileUrl = d.FileUrl,
                     Title = d.Title,
-                    SizeInBytes = d.SizeInBytes,
-                    Status = d.Status,
                     AvatarUrl = d.Uploader.LoginProvider == "Custom" ? d.Uploader.CustomAvatar : d.Uploader.GoogleAvatar,
                     FullName = d.Uploader.FullName,
-                    DislikeCount = d.DislikeCount,
                     LikeCount = d.LikeCount,
                     ViewCount = d.ViewCount,
                     Thumbnail = d.Thumbnail,
@@ -111,7 +110,7 @@ namespace Infrastructure.Repositories
             doc!.FileUrl = String.Empty;
             doc.SizeInBytes = 0;
             doc.Thumbnail = null;
-            doc.CreatedAt = null;
+            doc.UpdatedAt = DateTime.UtcNow;
             doc.PageCount = 0;
         }
 
@@ -128,6 +127,30 @@ namespace Infrastructure.Repositories
             .FirstOrDefaultAsync();
 
             return stats;
+        }
+
+        public async Task<ResDocumentDetailEditDto?> GetDocumentDetailEditAsync(int userId, int docId)
+        {
+            var query = _context.Documents
+                .AsNoTracking()
+                .Where(e => e.Id == docId && e.UploaderId == userId)
+                .Select(d => new ResDocumentDetailEditDto
+                {
+                    Id = d.Id,
+                    Title = d.Title,
+                    CreatedAt = d.CreatedAt,
+                    Thumbnail = d.Thumbnail,
+                    PageCount = d.PageCount,
+                    Tags = d.Tags.Select(e => e.Name).ToList(),
+                    Description = d.Description,
+                    SizeInBytes = d.SizeInBytes,
+                    Status = d.Status,
+                    FileUrl = d.FileUrl,
+                    UpdatedAt=d.UpdatedAt,
+                    UniversitySectionId=d.UniversitySectionId,
+                    UniversityId=d.UniversitySection.UniversityId
+                });
+            return await query.FirstOrDefaultAsync();
         }
     }
 }

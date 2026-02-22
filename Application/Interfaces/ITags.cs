@@ -8,7 +8,7 @@ namespace Application.Interfaces
         public Task CreateTag(Tag tag);
         public Task<List<string>?> GetTagOfDocument(int docid);
         public Task RemoveAllTagsByDocIdAsync(int docId);
-        public Task<List<Tag>> GetTags(int take);
-        public Task<List<ResDocumentDto>> GetDocumentByTagID(int? tagid,int skip,int take);
+        public Task<List<TagsDto>> GetTags(int take);
+        public Task<List<ResSummaryDocumentDto>> GetDocumentByTagID(int? tagid,int skip,int take);
     }
 }
