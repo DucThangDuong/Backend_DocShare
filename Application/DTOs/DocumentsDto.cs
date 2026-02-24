@@ -13,6 +13,7 @@
     public class ResDocumentDetailDto : ResDocumentBaseDto
     {
         public string? Description { get; set; }
+        public int UploaderId { get; set; }
         public string FileUrl { get; set; } = null!;
         public int? LikeCount { get; set; }
         public bool? IsLiked { get; set; }

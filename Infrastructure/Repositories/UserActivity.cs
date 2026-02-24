@@ -73,6 +73,30 @@ namespace Infrastructure.Repositories
             return await _context.SavedDocuments.AsNoTracking().Where(s => s.UserId == userId)
                            .Include(s => s.Document).Select(s => s.Document).ToListAsync();
         }
+
+        public async Task CreateFollowingAsync(int followerId, int followedId)
+        {
+            UserFollow result = new UserFollow
+            {
+                FollowerId = followerId,
+                FollowedId = followedId,
+                CreatedAt = DateTime.Now
+            };
+            await _context.UserFollows.AddAsync(result);
+        }
+        public async Task<bool> HasFollowedAsync(int followerId, int followedId)
+        {
+            return await _context.UserFollows.AsNoTracking().AnyAsync(f => f.FollowerId == followerId && f.FollowedId == followedId);
+        }
+
+        public async Task RemoveFollowingAsync(int followerId, int followedId)
+        {
+            var follow = _context.UserFollows.FirstOrDefault(f => f.FollowerId == followerId && f.FollowedId == followedId);
+            if (follow != null)
+            {
+                _context.UserFollows.Remove(follow);
+            }
+        }
     }
 }
 

@@ -1,4 +1,5 @@
-﻿using API.DTOs;
+﻿using Amazon.Runtime.Internal.Util;
+using API.DTOs;
 using API.Extensions;
 using Application.DTOs;
 using Application.Interfaces;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 
 namespace API.Controllers
@@ -54,6 +56,54 @@ namespace API.Controllers
             userPrivateProfile.avatarUrl = StringHelpers.GetFinalAvatarUrl(userPrivateProfile.avatarUrl ?? "");
             return Ok(userPrivateProfile);
         }
+        [HttpGet("{userId}/profile")]
+        [EnableRateLimiting("read_limit")]
+        public async Task<IActionResult> PublicProfile(int userId)
+        {
+            int currentId = User.GetUserId();
+            if (userId <= 0) return BadRequest(new { message = "ID người dùng không hợp lệ." });
+            ResUserPublicDto? userPublicProfile = await _repo.usersRepo.GetUserPublicProfileAsync(userId,currentId);
+            if (userPublicProfile == null)
+            {
+                return NotFound(new { message = "Không tìm thấy thông tin người dùng." });
+            }
+            userPublicProfile.avatarUrl = StringHelpers.GetFinalAvatarUrl(userPublicProfile.avatarUrl ?? "");
+            return Ok(userPublicProfile);
+        }
+        [HttpGet("{userId}/documents")]
+        public async Task<IActionResult> GetUserDocuments(int userId, [FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            if (take > 50) { take = 50; }
+            bool ishas = await _repo.usersRepo.HasUser(userId);
+            if (!ishas) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            try
+            {
+                List<ResDocumentDetailEditDto> response = await _repo.documentsRepo.GetDocsByUserIdPagedAsync(userId, skip, take);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                return BadRequest(new { message = "Có lỗi xảy ra khi tải dữ liệu." });
+            }
+        }
+        [HttpGet("{userId}/stats")]
+        public async Task<IActionResult> GetUserStats(int userId)
+        {
+            bool ishas = await _repo.usersRepo.HasUser(userId);
+            if (!ishas) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            ResUserStatsDto? userStatsDto = await _repo.documentsRepo.GetUserStatsAsync(userId);
+            if (userStatsDto == null)
+            {
+                userStatsDto = new ResUserStatsDto
+                {
+                    SavedCount = 0,
+                    UploadCount = 0,
+                    TotalLikesReceived = 0
+                };
+            }
+            return Ok(userStatsDto);
+        }
         //patch
         [HttpPatch("me/profile")]
         [Authorize]
@@ -62,7 +112,6 @@ namespace API.Controllers
         {
             try
             {
-
                 int userId = User.GetUserId();
                 bool ishasuser = await _repo.usersRepo.HasUser(userId);
                 if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
@@ -128,7 +177,7 @@ namespace API.Controllers
                 }
                 await _repo.usersRepo.UpdateUserNameAsync(dto.Username, userId);
                 await _repo.SaveAllAsync();
-                return Ok(new { date = dto.Username });
+                return Ok(new { data = dto.Username });
             }
             catch (Exception ex)
             {

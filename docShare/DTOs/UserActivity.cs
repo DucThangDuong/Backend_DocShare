@@ -4,5 +4,9 @@
     {
         public bool? IsLike { get; set; }
     }
+    public class ReqFollowDto
+    {
+        public int FollowedId { get; set; }
+    }
 
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
+
 namespace Infrastructure;
 
 public partial class DocShareContext : DbContext
@@ -31,14 +32,15 @@ public partial class DocShareContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserFollow> UserFollows { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC077856642D");
+            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC0763BE273D");
 
-            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB69E95E6B9").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6DDC01C85").IsUnique();
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -49,7 +51,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Document>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC075B07010E");
+            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC0736321AE9");
 
             entity.ToTable(tb =>
                 {
@@ -103,14 +105,14 @@ public partial class DocShareContext : DbContext
                         .HasConstraintName("FK_DocTags_Doc"),
                     j =>
                     {
-                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE92095A36A6207");
+                        j.HasKey("DocumentId", "TagId").HasName("PK__Document__CCE92095073B48B4");
                         j.ToTable("DocumentTags");
                     });
         });
 
         modelBuilder.Entity<DocumentVote>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BC417DBE7F");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__Document__F62322BCB614AD4B");
 
             entity.ToTable(tb => tb.HasTrigger("trg_UpdateVoteCounts"));
 
@@ -130,7 +132,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<SavedDocument>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BCC6D2C8D6");
+            entity.HasKey(e => new { e.UserId, e.DocumentId }).HasName("PK__SavedDoc__F62322BC21A0FB9E");
 
             entity.Property(e => e.SavedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -148,7 +150,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC07E3D70533");
+            entity.HasKey(e => e.Id).HasName("PK__Tags__3214EC0772A57754");
 
             entity.HasIndex(e => e.Slug, "IX_Tags_Slug");
 
@@ -160,9 +162,9 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<University>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Universi__3214EC0797B0DC53");
+            entity.HasKey(e => e.Id).HasName("PK__Universi__3214EC07E40CCBA9");
 
-            entity.HasIndex(e => e.Code, "UQ__Universi__A25C5AA77F08895A").IsUnique();
+            entity.HasIndex(e => e.Code, "UQ__Universi__A25C5AA7262B7A0D").IsUnique();
 
             entity.Property(e => e.Code)
                 .HasMaxLength(50)
@@ -173,7 +175,7 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<UniversitySection>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Universi__3214EC07B29CBCA4");
+            entity.HasKey(e => e.Id).HasName("PK__Universi__3214EC07D57CF24C");
 
             entity.HasIndex(e => e.UniversityId, "IX_UniversitySections_UniversityId");
 
@@ -186,11 +188,11 @@ public partial class DocShareContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07B1D8C1DA");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07BEC75B67");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E43AEF9BE3").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E47AAA47CD").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534B1CA6F9E").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534BD709A31").IsUnique();
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -202,6 +204,8 @@ public partial class DocShareContext : DbContext
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
                 .IsUnicode(false);
+            entity.Property(e => e.FollowerCount).HasDefaultValue(0);
+            entity.Property(e => e.FollowingCount).HasDefaultValue(0);
             entity.Property(e => e.FullName).HasMaxLength(100);
             entity.Property(e => e.GoogleAvatar)
                 .HasMaxLength(255)
@@ -233,6 +237,30 @@ public partial class DocShareContext : DbContext
                 .HasForeignKey(d => d.UniversityId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_Users_Universities");
+        });
+
+        modelBuilder.Entity<UserFollow>(entity =>
+        {
+            entity.HasKey(e => new { e.FollowerId, e.FollowedId }).HasName("PK__UserFoll__F7A5FC9FC5A4F063");
+
+            entity.ToTable(tb => tb.HasTrigger("trg_UpdateFollowerFollowingCounts"));
+
+            entity.HasIndex(e => e.FollowedId, "IX_UserFollows_FollowedId");
+
+            entity.HasIndex(e => e.FollowerId, "IX_UserFollows_FollowerId");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Followed).WithMany(p => p.UserFollowFolloweds)
+                .HasForeignKey(d => d.FollowedId)
+                .HasConstraintName("FK_Follows_Followed");
+
+            entity.HasOne(d => d.Follower).WithMany(p => p.UserFollowFollowers)
+                .HasForeignKey(d => d.FollowerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Follows_Follower");
         });
 
         OnModelCreatingPartial(modelBuilder);

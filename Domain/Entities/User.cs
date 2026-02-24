@@ -39,6 +39,10 @@ public partial class User
 
     public int? UniversityId { get; set; }
 
+    public int? FollowerCount { get; set; }
+
+    public int? FollowingCount { get; set; }
+
     public virtual ICollection<DocumentVote> DocumentVotes { get; set; } = new List<DocumentVote>();
 
     public virtual ICollection<Document> Documents { get; set; } = new List<Document>();
@@ -46,4 +50,8 @@ public partial class User
     public virtual ICollection<SavedDocument> SavedDocuments { get; set; } = new List<SavedDocument>();
 
     public virtual University? University { get; set; }
+
+    public virtual ICollection<UserFollow> UserFollowFolloweds { get; set; } = new List<UserFollow>();
+
+    public virtual ICollection<UserFollow> UserFollowFollowers { get; set; } = new List<UserFollow>();
 }

@@ -14,6 +14,8 @@ namespace Application.DTOs
         public string? avatarUrl{ get; set; }
         public int? UniversityId { get; set; }
         public string? UniversityName { get; set; }
+        public int? FollowerCount { get; set; }
+        public bool IsFollowing { get; set; }
     }
     public class ResUserPrivate : ResUserPublicDto
     {
@@ -21,5 +23,6 @@ namespace Application.DTOs
         public long storagelimit { get; set; }
         public long usedstorage { get; set; }
         public bool hasPassword { get; set; }
+        public int? FollowingCount { get; set; }
     }
 }

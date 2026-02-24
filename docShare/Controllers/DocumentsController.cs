@@ -179,7 +179,7 @@ namespace API.Controllers
                 };
                 if (dto.UniversityId != null && dto.UniversitySectionId!= null)
                 {
-                    var ishas = await _repo.universititesRepo.HasUniSection(dto.UniversityId.Value, dto.UniversitySectionId.Value);
+                    var ishas = await _repo.universititesRepo.HasUniSection(dto.UniversitySectionId.Value);
                     if(!ishas)
                     {
                         return BadRequest(new { message = "Khoa/Ngành không hợp lệ." });
@@ -369,7 +369,7 @@ namespace API.Controllers
                 }
                 if (dto.UniversitySectionId != null)
                 {
-                    var ishas = await _repo.universititesRepo.HasUniSection(dto.UniversityId.Value, dto.UniversitySectionId.Value);
+                    var ishas = await _repo.universititesRepo.HasUniSection( dto.UniversitySectionId.Value);
                     if (!ishas)
                     {
                         return BadRequest(new { message = "Khoa/Ngành không hợp lệ." });

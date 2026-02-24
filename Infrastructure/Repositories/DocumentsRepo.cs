@@ -75,6 +75,7 @@ namespace Infrastructure.Repositories
                 {
                     Id = d.Id,
                     CreatedAt = d.CreatedAt,
+                    UploaderId= d.UploaderId,
                     Description = d.Description,
                     FileUrl = d.FileUrl,
                     Title = d.Title,

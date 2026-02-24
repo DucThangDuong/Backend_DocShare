@@ -46,7 +46,6 @@ namespace API.Controllers
                 userEntity.RefreshToken = refreshToken.Token;
                 userEntity.RefreshTokenExpiryTime = refreshToken.ExpiryDate;
                 userEntity.LoginProvider = "Custom";
-
                 SetRefreshTokenCookie(refreshToken.Token, refreshToken.ExpiryDate);
                 await _repo.SaveAllAsync();
                 return Ok(new

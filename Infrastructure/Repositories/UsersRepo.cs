@@ -72,7 +72,9 @@ namespace Infrastructure.Repositories
                     avatarUrl = u.LoginProvider == "Custom" ? u.CustomAvatar : u.GoogleAvatar,
                     UniversityId = u.UniversityId,
                     UniversityName = u.University != null ? u.University.Name : null,
-                    hasPassword = !string.IsNullOrEmpty(u.PasswordHash)
+                    hasPassword = !string.IsNullOrEmpty(u.PasswordHash),
+                    FollowerCount = u.FollowingCount,
+                    FollowingCount = u.FollowingCount
                 }).FirstOrDefaultAsync();
         }
 
@@ -147,7 +149,7 @@ namespace Infrastructure.Repositories
                     PasswordHash = passwordHash,
                     Username = username,
                     FullName = fullname,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     Role = "User",
                     IsActive = true,
                     LoginProvider = "Custom"
@@ -158,6 +160,24 @@ namespace Infrastructure.Repositories
         public async Task CreateUserAsync(User user)
         {
             await _context.Users.AddAsync(user);
+        }
+
+        public  async Task<ResUserPublicDto?> GetUserPublicProfileAsync(int userId,int currentId)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => new ResUserPublicDto
+                {
+                    id = u.Id,
+                    username = u.Username,
+                    fullname = u.FullName ?? string.Empty,
+                    avatarUrl = u.LoginProvider == "Custom" ? u.CustomAvatar : u.GoogleAvatar,
+                    UniversityName = u.University != null ? u.University.Name : null,
+                    UniversityId = u.UniversityId,
+                    FollowerCount=u.FollowerCount,
+                    IsFollowing = u.UserFollowFolloweds.Any(f => f.FollowerId == currentId)
+                }).FirstOrDefaultAsync();
         }
     }
 }

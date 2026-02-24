@@ -26,5 +26,6 @@ namespace Application.Interfaces
         public Task UpdateUserPassword(string newPassword, int userId);
         public Task<string?> GetPasswordByUserId(int userId);
         public Task CreateUserCustomAsync(string email,string password,string fullname);
+        public Task<ResUserPublicDto?> GetUserPublicProfileAsync(int userId, int currentId);
     }
 }
