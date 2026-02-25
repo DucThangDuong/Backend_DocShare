@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers
 {
     [Route("api/universities")]
     [ApiController]
+    [EnableRateLimiting("read_public")]
     public class UniversitiesController : ControllerBase
     {
         private readonly IUnitOfWork _repo;
@@ -54,8 +56,6 @@ namespace API.Controllers
             return Ok(result);
         }
 
-        // GET api/universities/{universityId}/documents
-
         [HttpGet("{universityId}/documents/popular")]
         public async Task<IActionResult> GetPopularDocuments(int universityId, [FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
@@ -95,6 +95,8 @@ namespace API.Controllers
         }
 
         [HttpPost("{universityId}/sections")]
+        [EnableRateLimiting("write_standard")]
+        [Authorize]
         public async Task<IActionResult> AddSectionToUniversity(int universityId, [FromBody] ReqUniversitySectionDTO section)
         {
             bool ishas = await _repo.universititesRepo.HasValue(universityId);

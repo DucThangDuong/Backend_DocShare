@@ -172,7 +172,7 @@ namespace API.Services
                 if (document != null)
                 {
                     document.Thumbnail = result.ThumbnailUrl;
-                    await unitOfWork.documentsRepo.UpdateAsync(document);
+                    unitOfWork.documentsRepo.Update(document);
                     await unitOfWork.SaveAllAsync();
 
                     _logger.LogInformation("Updated Thumbnail for DocId: {Id}", result.DocId);

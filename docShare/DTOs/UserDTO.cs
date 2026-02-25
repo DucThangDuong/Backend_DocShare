@@ -7,6 +7,7 @@ namespace API.DTOs
         public string? Email { get; set; } = null!;
         public string? Password { get; set; } = null!;
         public string? FullName { get; set; }
+        public int? UniversityId { get; set; }
     }
     public class ReqUpdateUserNameDto
     {
@@ -18,8 +19,5 @@ namespace API.DTOs
         [Required]
         public string NewPassword { get; set; } = null!;
     }
-    public class ReqSetPassword
-    {
 
-    }
 }

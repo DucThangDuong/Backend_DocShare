@@ -13,7 +13,7 @@ namespace Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task<bool> ExistEmailAsync(string email)
+        public async Task<bool> HasEmailAsync(string email)
         {
             return await _context.Users.AsNoTracking().AnyAsync(e => e.Email == email);
         }
@@ -33,7 +33,7 @@ namespace Infrastructure.Repositories
             return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.RefreshToken == refreshToken);
         }
 
-        public async Task RevokeRefreshTokenAsync(int userId)
+        public async Task DeleteRefreshTokenAsync(int userId)
         {
             User? userrevoke = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
             if (userrevoke != null)
@@ -78,7 +78,7 @@ namespace Infrastructure.Repositories
                 }).FirstOrDefaultAsync();
         }
 
-        public async Task UpdateUserProfile(int userId, string? email, string? password, string? fullname)
+        public async Task UpdateUserProfile(int userId, string? email, string? password, string? fullname, int? universityId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (!string.IsNullOrWhiteSpace(email))
@@ -94,6 +94,10 @@ namespace Infrastructure.Repositories
             {
                 user!.FullName = fullname;
             }
+            if (universityId != null)
+            {
+                user!.UniversityId = universityId;
+            }
         }
         public async Task UpdateUserAvatar(int userId, string avatarFileName)
         {
@@ -101,7 +105,7 @@ namespace Infrastructure.Repositories
             user!.CustomAvatar = avatarFileName;
         }
 
-        public async Task<bool> ExistUserNameAsync(string username)
+        public async Task<bool> HasUserNameAsync(string username)
         {
             return await _context.Users.AsNoTracking().AnyAsync(e => e.Username == username);
         }
@@ -126,12 +130,12 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<bool> HasUser(int userId)
+        public async Task<bool> HasValue(int userId)
         {
             return await _context.Users.AnyAsync(e => e.Id == userId);
         }
 
-        public async Task CreateUserCustomAsync(string email, string password, string fullname)
+        public async Task CreateUserCustom(string email, string password, string fullname)
         {
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
             string username = email.Substring(0, email.LastIndexOf('@'));
@@ -154,12 +158,12 @@ namespace Infrastructure.Repositories
                     IsActive = true,
                     LoginProvider = "Custom"
                 };
-                await _context.Users.AddAsync(newUser);
+                _context.Users.Add(newUser);
             }
         }
-        public async Task CreateUserAsync(User user)
+        public async void CreateUser(User user)
         {
-            await _context.Users.AddAsync(user);
+            _context.Users.Add(user);
         }
 
         public  async Task<ResUserPublicDto?> GetUserPublicProfileAsync(int userId,int currentId)

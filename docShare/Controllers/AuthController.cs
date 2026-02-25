@@ -24,7 +24,7 @@ namespace API.Controllers
             _authService = authService;
         }
         //post
-        [EnableRateLimiting("ip_auth")]
+        [EnableRateLimiting("auth_strict")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] ReqLoginDTo userlogin)
         {
@@ -73,7 +73,7 @@ namespace API.Controllers
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
-        [EnableRateLimiting("ip_auth")]
+        [EnableRateLimiting("auth_strict")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] ReqRegisterDto request)
         {
@@ -84,12 +84,12 @@ namespace API.Controllers
             try
             {
 
-                bool isEmailExists = await _repo.usersRepo.ExistEmailAsync(request.Email);
+                bool isEmailExists = await _repo.usersRepo.HasEmailAsync(request.Email);
                 if (isEmailExists)
                 {
                     return Conflict(new { message = "Email này đã tồn tại" });
                 }
-                await _repo.usersRepo.CreateUserCustomAsync(request.Email, request.Password, request.Fullname);
+                await _repo.usersRepo.CreateUserCustom(request.Email, request.Password, request.Fullname);
                 await _repo.SaveAllAsync();
                 return Created();
             }
@@ -99,7 +99,7 @@ namespace API.Controllers
             }
         }
         [HttpPost("google")]
-        [EnableRateLimiting("ip_auth")]
+        [EnableRateLimiting("auth_strict")]
         public async Task<IActionResult> GoogleLogin([FromBody] ReqGoogleLoginDTO model)
         {
             if (string.IsNullOrEmpty(model.IdToken))
@@ -128,6 +128,7 @@ namespace API.Controllers
             }
         }
         [HttpPost("refresh-token")]
+        [EnableRateLimiting("token_refresh")]
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
@@ -160,6 +161,7 @@ namespace API.Controllers
         }
         [Authorize]
         [HttpPost("logout")]
+        [EnableRateLimiting("write_standard")]
         public async Task<IActionResult> Logout()
         {
             try
@@ -168,7 +170,7 @@ namespace API.Controllers
                 int userId = User.GetUserId();
                 if (userId != 0)
                 {
-                    await _repo.usersRepo.RevokeRefreshTokenAsync(userId);
+                    await _repo.usersRepo.DeleteRefreshTokenAsync(userId);
                     await _repo.SaveAllAsync();
                 }
                 return Ok(new { message = "Đăng xuất thành công" });

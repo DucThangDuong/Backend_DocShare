@@ -6,7 +6,6 @@ using Application.IServices;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -38,38 +37,9 @@ namespace API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddRateLimiter(options =>
             {
-                options.AddFixedWindowLimiter(policyName: "fixedwindow", configureOptions =>
-                {
-                    configureOptions.QueueLimit = 0;
-                    configureOptions.PermitLimit = 1000;
-                    configureOptions.Window = TimeSpan.FromSeconds(100);
-                    configureOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                });
-                options.AddPolicy("per_ip", httpContext =>
+                options.AddPolicy("auth_strict", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
-                            ? httpContext.User.Identity.Name!
-                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = 500,
-                            Window = TimeSpan.FromSeconds(30),
-                            QueueLimit = 0
-                        }));
-                options.AddPolicy("ip_auth", httpcontext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpcontext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = 5,
-                            Window = TimeSpan.FromSeconds(30),
-                            QueueLimit = 0
-                        }));
-                options.AddPolicy("export_file_light", httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
-                            ? httpContext.User.Identity.Name!
-                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             PermitLimit = 5,
@@ -77,7 +47,51 @@ namespace API
                             QueueLimit = 0
                         }));
 
-                options.AddPolicy("upload_limit", httpContext =>
+                options.AddPolicy("token_refresh", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromSeconds(60),
+                            QueueLimit = 0
+                        }));
+
+                options.AddPolicy("read_standard", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                            ? httpContext.User.Identity.Name!
+                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 30,
+                            Window = TimeSpan.FromSeconds(30),
+                            QueueLimit = 0
+                        }));
+
+                options.AddPolicy("read_public", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 60,
+                            Window = TimeSpan.FromSeconds(30),
+                            QueueLimit = 0
+                        }));
+
+                options.AddPolicy("write_standard", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                            ? httpContext.User.Identity.Name!
+                            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromSeconds(30),
+                            QueueLimit = 0
+                        }));
+
+                options.AddPolicy("write_heavy", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: httpContext.User.Identity?.IsAuthenticated == true
                             ? httpContext.User.Identity.Name!
@@ -89,14 +103,14 @@ namespace API
                             QueueLimit = 0
                         }));
 
-                options.AddPolicy("read_limit", httpContext =>
+                options.AddPolicy("delete_action", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: httpContext.User.Identity?.IsAuthenticated == true
                             ? httpContext.User.Identity.Name!
                             : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = 30,
+                            PermitLimit = 5,
                             Window = TimeSpan.FromSeconds(30),
                             QueueLimit = 0
                         }));
@@ -148,7 +162,7 @@ namespace API
             builder.Services.AddScoped<IDocuments, DocumentsRepo>();
             builder.Services.AddScoped<ITags, TagRepo>();
             builder.Services.AddScoped<IUserActivity, UserActivity>();
-            builder.Services.AddScoped<IUniversitites,UniversitiesRepo>();
+            builder.Services.AddScoped<IUniversitites, UniversitiesRepo>();
 
             // Services
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -161,7 +175,7 @@ namespace API
                 Credentials = new Amazon.Runtime.BasicAWSCredentials(
                     storageConfig["AccessKey"],
                     storageConfig["SecretKey"]),
-                    Region = Amazon.RegionEndpoint.USEast1
+                Region = Amazon.RegionEndpoint.USEast1
             });
 
             builder.Services.AddSingleton<IAmazonS3>(sp =>

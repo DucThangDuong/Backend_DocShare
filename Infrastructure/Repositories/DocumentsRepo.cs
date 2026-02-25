@@ -27,9 +27,9 @@ namespace Infrastructure.Repositories
             return await _context.Documents.AsNoTracking().CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 1);
         }
 
-        public async Task CreateAsync(Document document)
+        public void  Create(Document document)
         {
-            await _context.Documents.AddAsync(document);
+             _context.Documents.Add(document);
         }
 
         public async Task MoveToTrash(int docID)
@@ -94,18 +94,18 @@ namespace Infrastructure.Repositories
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<bool> HasDocument(int docID)
+        public async Task<bool> HasValue(int docID)
         {
             return await _context.Documents.AsNoTracking().AnyAsync(e => e.Id == docID);
         }
 
-        public async Task UpdateAsync(Document document)
+        public void Update(Document document)
         {
             _context.Documents.Update(document);
 
         }
 
-        public async Task DeleteFileUrl(int docid)
+        public async Task ClearFileContentUrl(int docid)
         {
             var doc = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docid);
             doc!.FileUrl = String.Empty;

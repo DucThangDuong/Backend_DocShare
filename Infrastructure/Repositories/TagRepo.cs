@@ -18,12 +18,12 @@ namespace Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task CreateTag(Tag tag)
+        public void Create(Tag tag)
         {
-            await _context.Tags.AddAsync(tag);
+            _context.Tags.Add(tag);
         }
 
-        public async Task RemoveAllTagsByDocIdAsync(int docId)
+        public async Task RemoveAllTagsOfDocIdAsync(int docId)
         {
             var document = await _context.Documents
                                          .Include(d => d.Tags)
@@ -43,7 +43,7 @@ namespace Infrastructure.Repositories
                     .ToListAsync();
         }
 
-        public async Task<Tag?> HasTag(string tagSlug, string tag)
+        public async Task<Tag?> HasValue(string tagSlug, string tag)
         {
             return await _context.Tags.FirstOrDefaultAsync(e => e.Name == tag && e.Slug == tagSlug);
         }

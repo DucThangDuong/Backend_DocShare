@@ -15,7 +15,7 @@ namespace Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task<bool> VoteDocumentAsync(int userId, int docId, bool? isLike)
+        public async Task AddVoteDocumentAsync(int userId, int docId, bool? isLike)
         {
             var existingVote = await _context.DocumentVotes
                                              .FirstOrDefaultAsync(v => v.UserId == userId && v.DocumentId == docId);
@@ -29,7 +29,7 @@ namespace Infrastructure.Repositories
                 else
                 {
                     existingVote.IsLike = isLike.Value;
-                    existingVote.VotedAt = DateTime.Now;
+                    existingVote.VotedAt = DateTime.UtcNow;
                 }
             }
             else if (isLike.HasValue)
@@ -39,14 +39,13 @@ namespace Infrastructure.Repositories
                     UserId = userId,
                     DocumentId = docId,
                     IsLike = isLike.Value,
-                    VotedAt = DateTime.Now
+                    VotedAt = DateTime.UtcNow
                 };
                 _context.DocumentVotes.Add(newVote);
             }
-            return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> ToggleSaveDocumentAsync(int userId, int docId)
+        public async Task AddUserSaveDocumentAsync(int userId, int docId)
         {
             var savedDoc = await _context.SavedDocuments
                                          .FirstOrDefaultAsync(s => s.UserId == userId && s.DocumentId == docId);
@@ -61,11 +60,10 @@ namespace Infrastructure.Repositories
                 {
                     UserId = userId,
                     DocumentId = docId,
-                    SavedAt = DateTime.Now,
+                    SavedAt = DateTime.UtcNow,
                 };
                 _context.SavedDocuments.Add(newSave);
             }
-            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<List<Document>> GetSavedDocumentsByUserAsync(int userId)
@@ -74,15 +72,15 @@ namespace Infrastructure.Repositories
                            .Include(s => s.Document).Select(s => s.Document).ToListAsync();
         }
 
-        public async Task CreateFollowingAsync(int followerId, int followedId)
+        public void AddFollowing(int followerId, int followedId)
         {
             UserFollow result = new UserFollow
             {
                 FollowerId = followerId,
                 FollowedId = followedId,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
-            await _context.UserFollows.AddAsync(result);
+            _context.UserFollows.Add(result);
         }
         public async Task<bool> HasFollowedAsync(int followerId, int followedId)
         {

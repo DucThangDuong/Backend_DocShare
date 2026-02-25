@@ -4,11 +4,13 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers
 {
     [Route("api/tags")]
     [ApiController]
+    [EnableRateLimiting("read_public")]
     public class TagController : ControllerBase
     {
         private readonly IUnitOfWork _repo;

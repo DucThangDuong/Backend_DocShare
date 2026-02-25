@@ -19,7 +19,7 @@ namespace API.Controllers
         }
         //get
         [Authorize]
-        [EnableRateLimiting("read_limit")]
+        [EnableRateLimiting("read_standard")]
         [HttpGet("saved-library")]
         public async Task<IActionResult> GetMySavedDocuments()
         {
@@ -30,33 +30,45 @@ namespace API.Controllers
         }
         //post
         [Authorize]
-        [EnableRateLimiting("export_file_light")]
+        [EnableRateLimiting("write_standard")]
         [HttpPost("vote/{docId}")]
         public async Task<IActionResult> VoteDocument(int docId, [FromBody] ReqVoteDto dto)
         {
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-            var result = await _repo.userActivityRepo.VoteDocumentAsync(userId, docId, dto.IsLike);
+            try
+            {
 
-            if (result) return Ok(new { message = "Đã ghi nhận tương tác." });
-            return BadRequest(new { message = "Không thể thực hiện thao tác." });
+                await _repo.userActivityRepo.AddVoteDocumentAsync(userId, docId, dto.IsLike);
+                await _repo.SaveAllAsync();
+                return Ok(new { message = "Đã ghi nhận tương tác." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
         [Authorize]
-        [EnableRateLimiting("export_file_light")]
+        [EnableRateLimiting("write_standard")]
         [HttpPost("save/{docId}")]
         public async Task<IActionResult> ToggleSaveDocument(int docId)
         {
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-            bool result = await _repo.userActivityRepo.ToggleSaveDocumentAsync(userId, docId);
-            if (result == false)
+            try
             {
-                return BadRequest(new { message = "Không thể thực hiện thao tác." });
+
+                await _repo.userActivityRepo.AddUserSaveDocumentAsync(userId, docId);
+                return Ok(new { message = "Lưu tài liệu thành công" });
             }
-            return Ok(new { message = "Lưu tài liệu thành công" });
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
         [Authorize]
         [HttpPost("follow")]
+        [EnableRateLimiting("write_standard")]
         public async Task<IActionResult> FollowUser([FromBody] ReqFollowDto dto)
         {
             int followerId = User.GetUserId();
@@ -66,7 +78,7 @@ namespace API.Controllers
             if (ishas) return BadRequest(new { message = "Đã theo dõi người dùng này." });
             try
             {
-                await _repo.userActivityRepo.CreateFollowingAsync(followerId, dto.FollowedId);
+                _repo.userActivityRepo.AddFollowing(followerId, dto.FollowedId);
                 await _repo.SaveAllAsync();
                 return Ok(new { message = "Đã theo dõi người dùng." });
             }
@@ -77,6 +89,7 @@ namespace API.Controllers
         }
         [Authorize]
         [HttpDelete("unfollow/{userId}")]
+        [EnableRateLimiting("write_standard")]
         public async Task<IActionResult> UnfollowUser( int userId)
         {
             int followerId = User.GetUserId();

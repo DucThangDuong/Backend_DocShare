@@ -1,5 +1,4 @@
-﻿using Amazon.Runtime.Internal.Util;
-using API.DTOs;
+﻿using API.DTOs;
 using API.Extensions;
 using Application.DTOs;
 using Application.Interfaces;
@@ -7,9 +6,6 @@ using Application.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using System.Security.Claims;
 
 namespace API.Controllers
 {
@@ -29,7 +25,7 @@ namespace API.Controllers
         // get
         [HttpGet("me/storage")]
         [Authorize]
-        [EnableRateLimiting("read_limit")]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> FileDoc()
         {
             int userId = User.GetUserId();
@@ -43,7 +39,7 @@ namespace API.Controllers
         }
         [HttpGet("me/profile")]
         [Authorize]
-        [EnableRateLimiting("read_limit")]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> PrivateProfile()
         {
             int userId = User.GetUserId();
@@ -57,7 +53,7 @@ namespace API.Controllers
             return Ok(userPrivateProfile);
         }
         [HttpGet("{userId}/profile")]
-        [EnableRateLimiting("read_limit")]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> PublicProfile(int userId)
         {
             int currentId = User.GetUserId();
@@ -71,10 +67,11 @@ namespace API.Controllers
             return Ok(userPublicProfile);
         }
         [HttpGet("{userId}/documents")]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> GetUserDocuments(int userId, [FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
             if (take > 50) { take = 50; }
-            bool ishas = await _repo.usersRepo.HasUser(userId);
+            bool ishas = await _repo.usersRepo.HasValue(userId);
             if (!ishas) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
@@ -88,9 +85,10 @@ namespace API.Controllers
             }
         }
         [HttpGet("{userId}/stats")]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> GetUserStats(int userId)
         {
-            bool ishas = await _repo.usersRepo.HasUser(userId);
+            bool ishas = await _repo.usersRepo.HasValue(userId);
             if (!ishas) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             ResUserStatsDto? userStatsDto = await _repo.documentsRepo.GetUserStatsAsync(userId);
             if (userStatsDto == null)
@@ -107,16 +105,16 @@ namespace API.Controllers
         //patch
         [HttpPatch("me/profile")]
         [Authorize]
-        [EnableRateLimiting("export_file_light")]
+        [EnableRateLimiting("write_standard")]
         public async Task<IActionResult> UpdatePrivateProfile(ReqUserUpdateDto reqUserUpdateDto)
         {
             try
             {
                 int userId = User.GetUserId();
-                bool ishasuser = await _repo.usersRepo.HasUser(userId);
+                bool ishasuser = await _repo.usersRepo.HasValue(userId);
                 if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
                 await _repo.usersRepo.UpdateUserProfile(userId, reqUserUpdateDto.Email, reqUserUpdateDto.Password
-                    , reqUserUpdateDto.FullName);
+                    , reqUserUpdateDto.FullName,reqUserUpdateDto.UniversityId);
                 await _repo.SaveAllAsync();
                 ResUserPrivate? updatedProfile = await _repo.usersRepo.GetUserPrivateProfileAsync(userId);
                 return Ok(updatedProfile);
@@ -128,12 +126,12 @@ namespace API.Controllers
         }
         [HttpPatch("me/avatar")]
         [Authorize]
-        [EnableRateLimiting("upload_limit")]
+        [EnableRateLimiting("write_heavy")]
         public async Task<IActionResult> UpdateAvatar(IFormFile avatar)
         {
             int userId = User.GetUserId();
             string? avatarFileName = null;
-            bool ishasuser = await _repo.usersRepo.HasUser(userId);
+            bool ishasuser = await _repo.usersRepo.HasValue(userId);
             if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
             try
             {
@@ -157,7 +155,7 @@ namespace API.Controllers
         }
         [HttpPatch("me/username")]
         [Authorize]
-        [EnableRateLimiting("export_file_light")]
+        [EnableRateLimiting("write_standard")]
         public async Task<IActionResult> UpdateUsername(ReqUpdateUserNameDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.Username))
@@ -165,12 +163,12 @@ namespace API.Controllers
                 return BadRequest(new { message = "Dữ liệu không hợp lệ." });
             }
             int userId = User.GetUserId();
-            bool ishasuser = await _repo.usersRepo.HasUser(userId);
+            bool ishasuser = await _repo.usersRepo.HasValue(userId);
             if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
             try
             {
 
-                bool ishasname = await _repo.usersRepo.ExistUserNameAsync(dto.Username);
+                bool ishasname = await _repo.usersRepo.HasUserNameAsync(dto.Username);
                 if (ishasname)
                 {
                     return Conflict(new { message = "Username đã tồn tại." });
@@ -186,12 +184,12 @@ namespace API.Controllers
         }
         [HttpPatch("me/password")]
         [Authorize]
-        [EnableRateLimiting("export_file_light")]
+        [EnableRateLimiting("write_standard")]
         public async Task<IActionResult> UpdatePassword([FromBody] ReqUpdatePasswordDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             int userId = User.GetUserId();
-            bool ishasuser = await _repo.usersRepo.HasUser(userId);
+            bool ishasuser = await _repo.usersRepo.HasValue(userId);
             if (userId == 0 || !ishasuser) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {

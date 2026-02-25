@@ -33,7 +33,7 @@ namespace API.Controllers
         //get 
         [Authorize]
         [HttpGet]
-        [EnableRateLimiting("read_limit")]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> GetDocsOfUser([FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
             if (take > 50) { take = 50; }
@@ -52,7 +52,7 @@ namespace API.Controllers
         }
         
         [HttpGet("{docid}")]
-        [EnableRateLimiting("read_limit")]
+        [EnableRateLimiting("read_public")]
         public async Task<IActionResult> GetDetailDoc(int docid)
         {
             int userId = User.GetUserId();
@@ -62,7 +62,7 @@ namespace API.Controllers
                 return Ok(cachedResult);
             }
 
-            bool ishas = await _repo.documentsRepo.HasDocument(docid);
+            bool ishas = await _repo.documentsRepo.HasValue(docid);
             if (!ishas)
             {
                 return NotFound(new { message = "Không tìm thấy tài liệu." });
@@ -77,11 +77,12 @@ namespace API.Controllers
         }
         [HttpGet("{docid}/edit")]
         [Authorize]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> GetDetailEditDoc(int docid)
         {
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
-            bool ishas = await _repo.documentsRepo.HasDocument(docid);
+            bool ishas = await _repo.documentsRepo.HasValue(docid);
             if (!ishas)
             {
                 return NotFound(new { message = "Không tìm thấy tài liệu." });
@@ -96,6 +97,7 @@ namespace API.Controllers
 
         [Authorize]
         [HttpGet("stats")]
+        [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> GetUserStats()
         {
             int userId = User.GetUserId();
@@ -128,7 +130,7 @@ namespace API.Controllers
 
         [HttpPost]
         [Authorize]
-        [EnableRateLimiting("upload_limit")]
+        [EnableRateLimiting("write_heavy")]
         public async Task<IActionResult> PostDocument([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
@@ -194,7 +196,7 @@ namespace API.Controllers
                     foreach (var tagName in dto.Tags)
                     {
                         string tagSlug = StringHelpers.GenerateSlug(tagName);
-                        var existingTag = await _repo.tagsRepo.HasTag(tagSlug, tagName);
+                        var existingTag = await _repo.tagsRepo.HasValue(tagSlug, tagName);
 
                         if (existingTag != null)
                         {
@@ -211,7 +213,7 @@ namespace API.Controllers
                         }
                     }
                 }
-                await _repo.documentsRepo.CreateAsync(newDoc);
+                _repo.documentsRepo.Create(newDoc);
                 await _repo.SaveAllAsync();
                 _cache.Remove($"user_stats_{userId}");
 
@@ -232,6 +234,7 @@ namespace API.Controllers
         }
         [HttpPost("scan")]
         [Authorize]
+        [EnableRateLimiting("write_heavy")]
         public async Task<IActionResult> PostCheckDocumentFile([FromForm] ReqCreateDocumentDTO dto)
         {
             if (dto.File == null || dto.File.Length == 0)
@@ -268,11 +271,11 @@ namespace API.Controllers
         //patch
         [HttpPatch("{docid}/trash")]
         [Authorize]
-        [EnableRateLimiting("export_file_light")]
+        [EnableRateLimiting("delete_action")]
         public async Task<IActionResult> PatchMoveToTrash(int docid, [FromBody] ReqMoveToTrashDTO isdelete)
         {
             int userId = User.GetUserId();
-            bool ishas = await _repo.documentsRepo.HasDocument(docid);
+            bool ishas = await _repo.documentsRepo.HasValue(docid);
             try
             {
 
@@ -301,7 +304,7 @@ namespace API.Controllers
         }
         [Authorize]
         [HttpPatch("{docid}")]
-        [EnableRateLimiting("upload_limit")]
+        [EnableRateLimiting("write_heavy")]
         public async Task<IActionResult> UpdateDocument(int docid, [FromForm] ReqUpdateDocumentDto dto)
         {
             int userId = User.GetUserId();
@@ -385,15 +388,15 @@ namespace API.Controllers
                 }
                 if (dto.Tags == null)
                 {
-                    await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
+                    await _repo.tagsRepo.RemoveAllTagsOfDocIdAsync(docid);
                 }
                 else
                 {
-                    await _repo.tagsRepo.RemoveAllTagsByDocIdAsync(docid);
+                    await _repo.tagsRepo.RemoveAllTagsOfDocIdAsync(docid);
                     foreach (var tagName in dto.Tags)
                     {
                         string tagSlug = StringHelpers.GenerateSlug(tagName);
-                        var existingTag = await _repo.tagsRepo.HasTag(tagSlug, tagName);
+                        var existingTag = await _repo.tagsRepo.HasValue(tagSlug, tagName);
 
                         if (existingTag != null)
                         {
@@ -411,7 +414,7 @@ namespace API.Controllers
                     }
                 }
                 document.UpdatedAt = DateTime.UtcNow;
-                await _repo.documentsRepo.UpdateAsync(document);
+                _repo.documentsRepo.Update(document);
                 await _repo.SaveAllAsync();
                 _cache.Remove($"doc_detail_{docid}_{userId}");
 
@@ -426,6 +429,7 @@ namespace API.Controllers
         //delete
         [Authorize]
         [HttpDelete("{docid}/file")]
+        [EnableRateLimiting("delete_action")]
         public async Task<IActionResult> DeleteDocumentFileUrl(int docid)
         {
             int userId = User.GetUserId();
@@ -433,10 +437,10 @@ namespace API.Controllers
             try
             {
 
-                bool result = await _repo.documentsRepo.HasDocument(docid); 
+                bool result = await _repo.documentsRepo.HasValue(docid); 
                 if (result)
                 {
-                    await _repo.documentsRepo.DeleteFileUrl(docid);
+                    await _repo.documentsRepo.ClearFileContentUrl(docid);
                     await _repo.SaveAllAsync();
                     _cache.Remove($"doc_detail_{docid}_{userId}");
                     return NoContent();
