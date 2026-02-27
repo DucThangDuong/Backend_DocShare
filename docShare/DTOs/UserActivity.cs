@@ -8,5 +8,9 @@
     {
         public int FollowedId { get; set; }
     }
+    public class ReqSaveDocDto
+    {
+        public bool IsSaved { get; set; }
+    }
 
 }

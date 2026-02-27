@@ -22,5 +22,9 @@ namespace Application.Interfaces
         public Task ClearFileContentUrl(int docid);
         public Task<ResUserStatsDto?> GetUserStatsAsync(int userId);
         public Task<ResDocumentDetailEditDto?> GetDocumentDetailEditAsync(int userId, int docId);
+        public Task<List<ResSummaryDocumentDto>>? GetDocumentSaveOfUser(int userId);
+        public Task<List<ResSummaryDocumentDto>>? GetDocumentLikeOfUser(int userId);
+        public Task<List<ResSummaryDocumentDto>>? GetDocumentUploadOfUser(int userId);
+
     }
 }

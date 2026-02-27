@@ -3,6 +3,7 @@ using API.Extensions;
 using Application.DTOs;
 using Application.Interfaces;
 using Application.IServices;
+using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -52,6 +53,36 @@ namespace API.Controllers
             userPrivateProfile.avatarUrl = StringHelpers.GetFinalAvatarUrl(userPrivateProfile.avatarUrl ?? "");
             return Ok(userPrivateProfile);
         }
+        [HttpGet("me/documents/save")]
+        [EnableRateLimiting("read_standard")]
+        [Authorize]
+        public async Task<IActionResult> DocumentsUserSave() {
+            int currentId = User.GetUserId();
+            if (currentId <= 0) return BadRequest(new { message = "ID người dùng không hợp lệ." });
+            List<ResSummaryDocumentDto>? result = await _repo.documentsRepo.GetDocumentSaveOfUser(currentId);
+            return Ok(result);
+        }
+        [HttpGet("me/documents/like")]
+        [EnableRateLimiting("read_standard")]
+        [Authorize]
+        public async Task<IActionResult> DocumentsUserLike()
+        {
+            int currentId = User.GetUserId();
+            if (currentId <= 0) return BadRequest(new { message = "ID người dùng không hợp lệ." });
+            List<ResSummaryDocumentDto>? result = await _repo.documentsRepo.GetDocumentLikeOfUser(currentId);
+            return Ok(result);
+        }
+        [HttpGet("me/documents/upload")]
+        [EnableRateLimiting("read_standard")]
+        [Authorize]
+        public async Task<IActionResult> DocumentsUserUpload()
+        {
+            int currentId = User.GetUserId();
+            if (currentId <= 0) return BadRequest(new { message = "ID người dùng không hợp lệ." });
+            List<ResSummaryDocumentDto>? result = await _repo.documentsRepo.GetDocumentUploadOfUser(currentId);
+            return Ok(result);
+        }
+
         [HttpGet("{userId}/profile")]
         [EnableRateLimiting("read_standard")]
         public async Task<IActionResult> PublicProfile(int userId)

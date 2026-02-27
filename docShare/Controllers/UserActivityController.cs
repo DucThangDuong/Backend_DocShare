@@ -51,14 +51,14 @@ namespace API.Controllers
         [Authorize]
         [EnableRateLimiting("write_standard")]
         [HttpPost("save/{docId}")]
-        public async Task<IActionResult> ToggleSaveDocument(int docId)
+        public async Task<IActionResult> SaveDocument(int docId )
         {
             int userId = User.GetUserId();
             if (userId == 0) return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
             try
             {
-
                 await _repo.userActivityRepo.AddUserSaveDocumentAsync(userId, docId);
+                await _repo.SaveAllAsync();
                 return Ok(new { message = "Lưu tài liệu thành công" });
             }
             catch (Exception ex)
