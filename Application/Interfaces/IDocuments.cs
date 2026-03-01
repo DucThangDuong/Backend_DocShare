@@ -25,6 +25,7 @@ namespace Application.Interfaces
         public Task<List<ResSummaryDocumentDto>>? GetDocumentSaveOfUser(int userId);
         public Task<List<ResSummaryDocumentDto>>? GetDocumentLikeOfUser(int userId);
         public Task<List<ResSummaryDocumentDto>>? GetDocumentUploadOfUser(int userId);
+        public Task SaveChangeAsync();
 
     }
 }

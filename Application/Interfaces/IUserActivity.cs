@@ -9,6 +9,6 @@ namespace Application.Interfaces
         public void AddFollowing(int followerId, int followedId);
         public Task<bool> HasFollowedAsync(int followerId, int followedId);
         public Task RemoveFollowingAsync(int followerId, int followedId);
-
+        public Task SaveChangeAsync();
     }
 }

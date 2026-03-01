@@ -14,5 +14,6 @@ namespace Application.Interfaces
         public Task<List<ResSummaryDocumentDto>> GetDocOfUniversity(int universityId, int skip, int take);
         public Task<List<ResSummaryDocumentDto>> GetPopularDocuments(int universityId, int skip, int take);
         public Task<List<ResSummaryDocumentDto>> GetRecentDocuments(int universityId, int skip, int take);
+        public Task SaveChangeAsync();
     }
 }

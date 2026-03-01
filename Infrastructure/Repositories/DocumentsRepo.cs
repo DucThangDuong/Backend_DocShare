@@ -201,5 +201,9 @@ namespace Infrastructure.Repositories
                     LikeCount = d.LikeCount
                 }).ToListAsync();
         }
+        public async Task SaveChangeAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

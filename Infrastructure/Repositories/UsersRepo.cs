@@ -183,5 +183,10 @@ namespace Infrastructure.Repositories
                     IsFollowing = u.UserFollowFolloweds.Any(f => f.FollowerId == currentId)
                 }).FirstOrDefaultAsync();
         }
+
+        public async Task SaveChangeAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -16,6 +16,9 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.20" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.17.2" />
+    <PackageReference Include="FastEndpoints" Version="7.2.0" />
+    <PackageReference Include="FastEndpoints.Attributes" Version="8.0.1" />
+    <PackageReference Include="FastEndpoints.Messaging.Core" Version="8.0.1" />
     <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.22" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" />

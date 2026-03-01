@@ -1,0 +1,34 @@
+using API.Extensions;
+using API.Features.Documents.Queries;
+using FastEndpoints;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+
+namespace API.Endpoints.Documents;
+
+public class GetDocsOfUserRequest
+{
+    public int Skip { get; set; } = 0;
+    public int Take { get; set; } = 10;
+}
+
+public class GetDocsOfUserEndpoint : Endpoint<GetDocsOfUserRequest>
+{
+    public GetDocsOfUserHandler Handler { get; set; } = null!;
+
+    public override void Configure()
+    {
+        Get("/api/documents");
+        AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
+        Options(x => x.RequireRateLimiting("read_standard"));
+    }
+
+    public override async Task HandleAsync(GetDocsOfUserRequest req, CancellationToken ct)
+    {
+        int userId = HttpContext.User.GetUserId();
+        if (userId == 0)
+        { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+
+        var result = await Handler.HandleAsync(new GetDocsOfUserQuery(userId, req.Skip, req.Take), ct);
+        await Send.ResponseAsync(result.Data, 200, ct);
+    }
+}

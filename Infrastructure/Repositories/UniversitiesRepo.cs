@@ -125,5 +125,9 @@ namespace Infrastructure.Repositories
                     Tags = d.Tags.Select(t => t.Name).ToList(),
                 }).ToListAsync();
         }
+        public async Task SaveChangeAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

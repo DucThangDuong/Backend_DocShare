@@ -3,6 +3,7 @@ using API.Extensions;
 using API.Services;
 using Application.Interfaces;
 using Application.IServices;
+using FastEndpoints;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -35,6 +36,7 @@ namespace API
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddFastEndpoints();
             builder.Services.AddRateLimiter(options =>
             {
                 options.AddPolicy("auth_strict", httpContext =>
@@ -169,6 +171,17 @@ namespace API
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             builder.Services.AddScoped<RabbitMQService>();
 
+            // Document Feature Handlers
+            builder.Services.AddScoped<API.Features.Documents.Commands.ClearDocumentFileHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Commands.CreateDocumentHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Commands.MoveToTrashHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Commands.ScanDocumentHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Commands.UpdateDocumentHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Queries.GetDocsOfUserHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Queries.GetDocumentDetailHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Queries.GetDocumentEditDetailHandler>();
+            builder.Services.AddScoped<API.Features.Documents.Queries.GetUserDocStatsHandler>();
+
             // AWS S3
             builder.Services.AddDefaultAWSOptions(new Amazon.Extensions.NETCore.Setup.AWSOptions
             {
@@ -213,6 +226,7 @@ namespace API
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();
+            app.UseFastEndpoints();
             app.MapControllers();
             app.MapHub<NotificationHub>("/notificationHub");
             app.Run();

@@ -95,6 +95,10 @@ namespace Infrastructure.Repositories
                 _context.UserFollows.Remove(follow);
             }
         }
+        public async Task SaveChangeAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }
 
