@@ -1,5 +1,4 @@
-using Application.DTOs;
-using Application.Interfaces;
+using API.Features.User.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.User;
@@ -11,7 +10,7 @@ public class GetPublicUserStatsRequest
 
 public class GetPublicUserStatsEndpoint : Endpoint<GetPublicUserStatsRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public GetPublicUserStatsHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -22,13 +21,11 @@ public class GetPublicUserStatsEndpoint : Endpoint<GetPublicUserStatsRequest>
 
     public override async Task HandleAsync(GetPublicUserStatsRequest req, CancellationToken ct)
     {
-        bool ishas = await Repo.usersRepo.HasValue(req.UserId);
-        if (!ishas) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
-        var userStatsDto = await Repo.documentsRepo.GetUserStatsAsync(req.UserId);
-        if (userStatsDto == null)
-        {
-            userStatsDto = new ResUserStatsDto { SavedCount = 0, UploadCount = 0, TotalLikesReceived = 0 };
-        }
-        await Send.ResponseAsync(userStatsDto, 200, ct);
+        var result = await Handler.HandleAsync(new GetPublicUserStatsQuery(req.UserId), ct);
+
+        if (!result.IsSuccess)
+            await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+        else
+            await Send.ResponseAsync(result.Data, 200, ct);
     }
 }

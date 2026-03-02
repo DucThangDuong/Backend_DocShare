@@ -1,5 +1,5 @@
 using API.Extensions;
-using Application.Interfaces;
+using API.Features.UserActivity.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -12,7 +12,7 @@ public class FollowUserRequest
 
 public class FollowUserEndpoint : Endpoint<FollowUserRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public FollowUserHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -25,14 +25,15 @@ public class FollowUserEndpoint : Endpoint<FollowUserRequest>
     {
         int followerId = HttpContext.User.GetUserId();
         if (followerId == 0) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
-        if (followerId == req.FollowedId) { await Send.ResponseAsync(new { message = "Không thể theo dõi chính mình." }, 400, ct); return; }
-        bool ishas = await Repo.userActivityRepo.HasFollowedAsync(followerId, req.FollowedId);
-        if (ishas) { await Send.ResponseAsync(new { message = "Đã theo dõi người dùng này." }, 400, ct); return; }
+
         try
         {
-            Repo.userActivityRepo.AddFollowing(followerId, req.FollowedId);
-            await Repo.SaveAllAsync();
-            await Send.ResponseAsync(new { message = "Đã theo dõi người dùng." }, 200, ct);
+            var result = await Handler.HandleAsync(new FollowUserCommand(followerId, req.FollowedId), ct);
+
+            if (!result.IsSuccess)
+                await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+            else
+                await Send.ResponseAsync(new { message = "Đã theo dõi người dùng." }, 200, ct);
         }
         catch (Exception ex)
         {

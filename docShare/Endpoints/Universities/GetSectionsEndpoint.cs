@@ -1,4 +1,4 @@
-using Application.Interfaces;
+using API.Features.Universities.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.Universities;
@@ -10,7 +10,7 @@ public class GetSectionsRequest
 
 public class GetSectionsEndpoint : Endpoint<GetSectionsRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public GetSectionsHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -21,9 +21,11 @@ public class GetSectionsEndpoint : Endpoint<GetSectionsRequest>
 
     public override async Task HandleAsync(GetSectionsRequest req, CancellationToken ct)
     {
-        bool ishas = await Repo.universititesRepo.HasValue(req.UniversityId);
-        if (!ishas) { await Send.ResponseAsync(null, 404, ct); return; }
-        var result = await Repo.universititesRepo.GetUniversitySectionsAsync(req.UniversityId);
-        await Send.ResponseAsync(result!, 200, ct);
+        var result = await Handler.HandleAsync(new GetSectionsQuery(req.UniversityId), ct);
+
+        if (!result.IsSuccess)
+            await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+        else
+            await Send.ResponseAsync(result.Data!, 200, ct);
     }
 }

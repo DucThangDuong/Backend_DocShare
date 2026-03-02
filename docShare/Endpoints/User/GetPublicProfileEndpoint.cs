@@ -1,6 +1,5 @@
 using API.Extensions;
-using Application.DTOs;
-using Application.Interfaces;
+using API.Features.User.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.User;
@@ -12,7 +11,7 @@ public class GetPublicProfileRequest
 
 public class GetPublicProfileEndpoint : Endpoint<GetPublicProfileRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public GetPublicProfileHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -25,9 +24,12 @@ public class GetPublicProfileEndpoint : Endpoint<GetPublicProfileRequest>
     {
         int currentId = HttpContext.User.GetUserId();
         if (req.UserId <= 0) { await Send.ResponseAsync(new { message = "ID người dùng không hợp lệ." }, 400, ct); return; }
-        var result = await Repo.usersRepo.GetUserPublicProfileAsync(req.UserId, currentId);
-        if (result == null) { await Send.ResponseAsync(new { message = "Không tìm thấy thông tin người dùng." }, 404, ct); return; }
-        result.avatarUrl = StringHelpers.GetFinalAvatarUrl(result.avatarUrl ?? "");
-        await Send.ResponseAsync(result, 200, ct);
+
+        var result = await Handler.HandleAsync(new GetPublicProfileQuery(req.UserId, currentId), ct);
+
+        if (!result.IsSuccess)
+            await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+        else
+            await Send.ResponseAsync(result.Data, 200, ct);
     }
 }

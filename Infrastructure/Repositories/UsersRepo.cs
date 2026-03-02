@@ -1,6 +1,5 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
-using Azure.Core;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 namespace Infrastructure.Repositories
@@ -23,10 +22,7 @@ namespace Infrastructure.Repositories
             return await _context.Users.FirstOrDefaultAsync(e => e.Email == email);
         }
 
-        public async Task<User?> GetUserAsync(int id)
-        {
-            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
-        }
+
 
         public async Task<User?> GetUserByRefreshTokenAsync(string refreshToken)
         {
@@ -43,19 +39,7 @@ namespace Infrastructure.Repositories
             }
         }
 
-        public async Task<ResUserStorageFileDto?> GetUserStorageStatsAsync(int userId)
-        {
-            return await _context.Users
-                .Where(e => e.Id == userId)
-                .Select(u => new ResUserStorageFileDto
-                {
-                    StorageLimit = u.StorageLimit,
-                    UsedStorage = u.UsedStorage,
-                    TotalCount = u.Documents.Count(d => d.IsDeleted == 0),
-                    Trash = u.Documents.Count(d => d.IsDeleted == 1)
-                })
-                .FirstOrDefaultAsync();
-        }
+
 
         public Task<ResUserPrivate?> GetUserPrivateProfileAsync(int userId)
         {
@@ -166,23 +150,7 @@ namespace Infrastructure.Repositories
             _context.Users.Add(user);
         }
 
-        public  async Task<ResUserPublicDto?> GetUserPublicProfileAsync(int userId,int currentId)
-        {
-            return await _context.Users
-                .AsNoTracking()
-                .Where(u => u.Id == userId)
-                .Select(u => new ResUserPublicDto
-                {
-                    id = u.Id,
-                    username = u.Username,
-                    fullname = u.FullName ?? string.Empty,
-                    avatarUrl = u.LoginProvider == "Custom" ? u.CustomAvatar : u.GoogleAvatar,
-                    UniversityName = u.University != null ? u.University.Name : null,
-                    UniversityId = u.UniversityId,
-                    FollowerCount=u.FollowerCount,
-                    IsFollowing = u.UserFollowFolloweds.Any(f => f.FollowerId == currentId)
-                }).FirstOrDefaultAsync();
-        }
+
 
         public async Task SaveChangeAsync()
         {

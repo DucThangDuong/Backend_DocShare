@@ -1,5 +1,5 @@
 using API.Extensions;
-using Application.Interfaces;
+using API.Features.User.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.User;
@@ -13,7 +13,7 @@ public class GetUserDocumentsRequest
 
 public class GetUserDocumentsEndpoint : Endpoint<GetUserDocumentsRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public GetUserDocumentsHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -24,18 +24,11 @@ public class GetUserDocumentsEndpoint : Endpoint<GetUserDocumentsRequest>
 
     public override async Task HandleAsync(GetUserDocumentsRequest req, CancellationToken ct)
     {
-        if (req.Take > 50) req.Take = 50;
-        bool ishas = await Repo.usersRepo.HasValue(req.UserId);
-        if (!ishas) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
-        try
-        {
-            var response = await Repo.documentsRepo.GetDocsByUserIdPagedAsync(req.UserId, req.Skip, req.Take);
-            await Send.ResponseAsync(response, 200, ct);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine(ex);
-            await Send.ResponseAsync(new { message = "Có lỗi xảy ra khi tải dữ liệu." }, 400, ct);
-        }
+        var result = await Handler.HandleAsync(new GetUserDocumentsQuery(req.UserId, req.Skip, req.Take), ct);
+
+        if (!result.IsSuccess)
+            await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+        else
+            await Send.ResponseAsync(result.Data, 200, ct);
     }
 }

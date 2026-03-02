@@ -1,5 +1,4 @@
-using Application.DTOs;
-using Application.Interfaces;
+using API.Features.Universities.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.Universities;
@@ -11,7 +10,7 @@ public class GetDocumentsOfSectionRequest
 
 public class GetDocumentsOfSectionEndpoint : Endpoint<GetDocumentsOfSectionRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public GetDocumentsOfSectionHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -22,9 +21,11 @@ public class GetDocumentsOfSectionEndpoint : Endpoint<GetDocumentsOfSectionReque
 
     public override async Task HandleAsync(GetDocumentsOfSectionRequest req, CancellationToken ct)
     {
-        bool ishas = await Repo.universititesRepo.HasUniSection(req.SectionId);
-        if (!ishas) { await Send.ResponseAsync(null, 404, ct); return; }
-        var result = await Repo.universititesRepo.GetDocOfSection(req.SectionId);
-        await Send.ResponseAsync(result, 200, ct);
+        var result = await Handler.HandleAsync(new GetDocumentsOfSectionQuery(req.SectionId), ct);
+
+        if (!result.IsSuccess)
+            await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+        else
+            await Send.ResponseAsync(result.Data, 200, ct);
     }
 }

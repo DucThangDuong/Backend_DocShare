@@ -1,6 +1,6 @@
 using API.DTOs;
 using API.Extensions;
-using Application.Interfaces;
+using API.Features.User.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -8,7 +8,7 @@ namespace API.Endpoints.User;
 
 public class UpdateUsernameEndpoint : Endpoint<ReqUpdateUserNameDto>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public UpdateUsernameHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -24,16 +24,18 @@ public class UpdateUsernameEndpoint : Endpoint<ReqUpdateUserNameDto>
             await Send.ResponseAsync(new { message = "Dữ liệu không hợp lệ." }, 400, ct);
             return;
         }
+
         int userId = HttpContext.User.GetUserId();
-        bool ishasuser = await Repo.usersRepo.HasValue(userId);
-        if (userId == 0 || !ishasuser) { await Send.ResponseAsync(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." }, 401, ct); return; }
+
         try
         {
-            bool ishasname = await Repo.usersRepo.HasUserNameAsync(req.Username);
-            if (ishasname) { await Send.ResponseAsync(new { message = "Username đã tồn tại." }, 409, ct); return; }
-            await Repo.usersRepo.UpdateUserNameAsync(req.Username, userId);
-            await Repo.SaveAllAsync();
-            await Send.ResponseAsync(new { data = req.Username }, 200, ct);
+            var result = await Handler.HandleAsync(new UpdateUsernameCommand(userId, req.Username), ct);
+
+            if (!result.IsSuccess)
+                await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+            else
+                await Send.ResponseAsync(new { data = result.Data }, 200, ct);
         }
         catch (Exception ex)
         {

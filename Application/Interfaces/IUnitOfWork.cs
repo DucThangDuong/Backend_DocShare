@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+
 
 namespace Application.Interfaces
 {
@@ -11,7 +8,6 @@ namespace Application.Interfaces
         public IUsers usersRepo { get; }
         public IDocuments documentsRepo { get; }
         public ITags tagsRepo { get; }
-        public IUserActivity userActivityRepo { get; }
         public IUniversitites universititesRepo { get; }
         public Task SaveAllAsync();
     }

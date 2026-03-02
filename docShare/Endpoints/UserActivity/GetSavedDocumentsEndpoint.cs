@@ -1,5 +1,5 @@
 using API.Extensions;
-using Application.Interfaces;
+using API.Features.UserActivity.Queries;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -7,7 +7,7 @@ namespace API.Endpoints.UserActivity;
 
 public class GetSavedDocumentsEndpoint : EndpointWithoutRequest
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public GetSavedDocumentsHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -20,7 +20,8 @@ public class GetSavedDocumentsEndpoint : EndpointWithoutRequest
     {
         int userId = HttpContext.User.GetUserId();
         if (userId == 0) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
-        var docs = await Repo.userActivityRepo.GetSavedDocumentsByUserAsync(userId);
-        await Send.ResponseAsync(docs, 200, ct);
+
+        var result = await Handler.HandleAsync(new GetSavedDocumentsQuery(userId), ct);
+        await Send.ResponseAsync(result.Data, 200, ct);
     }
 }

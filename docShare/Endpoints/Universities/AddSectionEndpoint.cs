@@ -1,5 +1,4 @@
-using API.DTOs;
-using Application.Interfaces;
+using API.Features.Universities.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -13,7 +12,7 @@ public class AddSectionRequest
 
 public class AddSectionEndpoint : Endpoint<AddSectionRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public API.Features.Universities.Commands.AddSectionHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -24,10 +23,11 @@ public class AddSectionEndpoint : Endpoint<AddSectionRequest>
 
     public override async Task HandleAsync(AddSectionRequest req, CancellationToken ct)
     {
-        bool ishas = await Repo.universititesRepo.HasValue(req.UniversityId);
-        if (!ishas) { await Send.ResponseAsync(null, 404, ct); return; }
-        var result = await Repo.universititesRepo.AddSectionToUniversityAsync(req.UniversityId, req.Name);
-        await Repo.SaveAllAsync();
-        await Send.ResponseAsync(result, 200, ct);
+        var result = await Handler.HandleAsync(new AddSectionCommand(req.UniversityId, req.Name), ct);
+
+        if (!result.IsSuccess)
+            await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+        else
+            await Send.ResponseAsync(result.Data, 200, ct);
     }
 }

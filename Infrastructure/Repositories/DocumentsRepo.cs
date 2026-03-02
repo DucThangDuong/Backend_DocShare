@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Application.DTOs;
+﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -17,15 +12,7 @@ namespace Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<int> CountDocByUserID(int UserID)
-        {
-            return await _context.Documents.AsNoTracking().CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 0);
-        }
 
-        public async Task<int> CountTrashByUserID(int UserID)
-        {
-            return await _context.Documents.AsNoTracking().CountAsync(e => e.UploaderId == UserID && e.IsDeleted == 1);
-        }
 
         public void  Create(Document document)
         {
@@ -154,53 +141,7 @@ namespace Infrastructure.Repositories
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<List<ResSummaryDocumentDto>>? GetDocumentSaveOfUser(int userId)
-        {
-            return await _context.SavedDocuments
-                .AsNoTracking()
-                .Where(s => s.UserId == userId)
-                .Select(s => new ResSummaryDocumentDto
-                {
-                    Id = s.Document.Id,
-                    Title = s.Document.Title,
-                    CreatedAt = s.Document.CreatedAt,
-                    Thumbnail = s.Document.Thumbnail,
-                    PageCount = s.Document.PageCount,
-                    LikeCount = s.Document.LikeCount
-                }).ToListAsync();
-        }
 
-        public async Task<List<ResSummaryDocumentDto>>? GetDocumentLikeOfUser(int userId)
-        {
-            return await _context.DocumentVotes
-                .AsNoTracking()
-                .Where(v => v.UserId == userId && v.IsLike)
-                .Select(v => new ResSummaryDocumentDto
-                {
-                    Id = v.Document.Id,
-                    Title = v.Document.Title,
-                    CreatedAt = v.Document.CreatedAt,
-                    Thumbnail = v.Document.Thumbnail,
-                    PageCount = v.Document.PageCount,
-                    LikeCount = v.Document.LikeCount
-                }).ToListAsync();
-        }
-
-        public async Task<List<ResSummaryDocumentDto>>? GetDocumentUploadOfUser(int userId)
-        {
-            return await _context.Documents
-                .AsNoTracking()
-                .Where(d => d.UploaderId == userId && d.IsDeleted == 0)
-                .Select(d => new ResSummaryDocumentDto
-                {
-                    Id = d.Id,
-                    Title = d.Title,
-                    CreatedAt = d.CreatedAt,
-                    Thumbnail = d.Thumbnail,
-                    PageCount = d.PageCount,
-                    LikeCount = d.LikeCount
-                }).ToListAsync();
-        }
         public async Task SaveChangeAsync()
         {
             await _context.SaveChangesAsync();

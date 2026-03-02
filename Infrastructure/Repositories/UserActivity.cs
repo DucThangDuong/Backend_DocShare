@@ -1,10 +1,5 @@
 ﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Application.Interfaces;
 namespace Infrastructure.Repositories
 {
@@ -66,11 +61,8 @@ namespace Infrastructure.Repositories
             }
         }
 
-        public async Task<List<Document>> GetSavedDocumentsByUserAsync(int userId)
-        {
-            return await _context.SavedDocuments.AsNoTracking().Where(s => s.UserId == userId)
-                           .Include(s => s.Document).Select(s => s.Document).ToListAsync();
-        }
+
+
 
         public void AddFollowing(int followerId, int followedId)
         {

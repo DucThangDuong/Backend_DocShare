@@ -1,5 +1,5 @@
 using API.Extensions;
-using Application.Interfaces;
+using API.Features.UserActivity.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -12,7 +12,7 @@ public class SaveDocumentRequest
 
 public class SaveDocumentEndpoint : Endpoint<SaveDocumentRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
+    public SaveDocumentHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -25,11 +25,15 @@ public class SaveDocumentEndpoint : Endpoint<SaveDocumentRequest>
     {
         int userId = HttpContext.User.GetUserId();
         if (userId == 0) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+
         try
         {
-            await Repo.userActivityRepo.AddUserSaveDocumentAsync(userId, req.DocId);
-            await Repo.SaveAllAsync();
-            await Send.ResponseAsync(new { message = "Lưu tài liệu thành công" }, 200, ct);
+            var result = await Handler.HandleAsync(new Features.UserActivity.Commands.SaveDocumentCommand(userId, req.DocId), ct);
+
+            if (!result.IsSuccess)
+                await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+            else
+                await Send.ResponseAsync(new { message = "Lưu tài liệu thành công" }, 200, ct);
         }
         catch (Exception ex)
         {

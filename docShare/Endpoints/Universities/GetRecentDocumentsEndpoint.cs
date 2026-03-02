@@ -1,7 +1,5 @@
-using Application.DTOs;
-using Application.Interfaces;
+using API.Features.Universities.Queries;
 using FastEndpoints;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace API.Endpoints.Universities;
 
@@ -14,8 +12,7 @@ public class GetRecentDocumentsRequest
 
 public class GetRecentDocumentsEndpoint : Endpoint<GetRecentDocumentsRequest>
 {
-    public IUnitOfWork Repo { get; set; } = null!;
-    public IMemoryCache Cache { get; set; } = null!;
+    public GetRecentDocumentsHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {
@@ -26,15 +23,11 @@ public class GetRecentDocumentsEndpoint : Endpoint<GetRecentDocumentsRequest>
 
     public override async Task HandleAsync(GetRecentDocumentsRequest req, CancellationToken ct)
     {
-        bool ishas = await Repo.universititesRepo.HasValue(req.UniversityId);
-        if (!ishas) { await Send.ResponseAsync(null, 404, ct); return; }
-        string cacheKey = $"universities:{req.UniversityId}:documents:recent:{req.Skip}:{req.Take}";
-        if (Cache.TryGetValue(cacheKey, out List<ResSummaryDocumentDto>? result))
-        {
-            await Send.ResponseAsync(result!, 200, ct); return;
-        }
-        result = await Repo.universititesRepo.GetRecentDocuments(req.UniversityId, req.Skip, req.Take);
-        Cache.Set(cacheKey, result, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(10)));
-        await Send.ResponseAsync(result!, 200, ct);
+        var result = await Handler.HandleAsync(new GetRecentDocumentsQuery(req.UniversityId, req.Skip, req.Take), ct);
+
+        if (!result.IsSuccess)
+            await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
+        else
+            await Send.ResponseAsync(result.Data, 200, ct);
     }
 }
