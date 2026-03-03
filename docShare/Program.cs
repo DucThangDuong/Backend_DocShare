@@ -7,6 +7,7 @@ using FastEndpoints;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -37,6 +38,11 @@ namespace API
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddFastEndpoints();
+            // mail settings
+            builder.Services.AddTransient<IEmailSender, MailSender>();
+            builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+            
+            
             builder.Services.AddRateLimiter(options =>
             {
                 options.AddPolicy("auth_strict", httpContext =>

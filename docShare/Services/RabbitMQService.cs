@@ -1,6 +1,7 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Application.IServices;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -24,6 +25,7 @@ namespace API.Services
             _channel =  _connection.CreateChannelAsync().GetAwaiter().GetResult();
             _channel.QueueDeclareAsync(queue: "pdf_scan_queue", durable: true, exclusive: false, autoDelete: false).GetAwaiter().GetResult();
             _channel.QueueDeclareAsync(queue: "thumb_create_queue", durable: true, exclusive: false, autoDelete: false).GetAwaiter().GetResult();
+            _channel.QueueDeclareAsync(queue: "create_sendmail_queue", durable: true, exclusive: false, autoDelete: false).GetAwaiter().GetResult();
         }
         public async Task SendFileToScan(string filePath, string userId, string documentidto)
         {
@@ -57,6 +59,20 @@ namespace API.Services
                 throw;
             }
         }
+        public async Task SendEmailResquest(SendMailRequestDto request)
+        {
+            try
+            {
+                var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request));
+                await _channel.BasicPublishAsync(exchange: "", routingKey: "create_sendmail_queue", body: body);
+                _logger.LogInformation("Sent email request to queue for: {Email}", request.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email request");
+                throw;
+            }
+        }
 
         public void Dispose()
         {
@@ -71,6 +87,7 @@ namespace API.Services
         private readonly IConfiguration _config;
         private readonly IStorageService _storageService;
         private readonly IServiceScopeFactory _scopeFactory; 
+        private readonly IEmailSender _emailSender;
         private readonly ILogger<RabbitMQWorker> _logger;
         private readonly string _hostName;
 
@@ -78,13 +95,15 @@ namespace API.Services
             ISignalRService signalRService,
             IConfiguration configuration,
             IStorageService storageService,
-            IServiceScopeFactory scopeFactory, 
+            IServiceScopeFactory scopeFactory,
+            IEmailSender emailSender,
             ILogger<RabbitMQWorker> logger)
         {
             _signalRService = signalRService;
             _config = configuration;
             _storageService = storageService;
             _scopeFactory = scopeFactory;
+            _emailSender = emailSender;
             _logger = logger;
             _hostName = _config["RabbitMQ:HostName"] ?? "localhost";
         }
@@ -147,6 +166,30 @@ namespace API.Services
                         }
                     };
                     await channel.BasicConsumeAsync(queue: "thumb_result_queue", autoAck: true, consumer: consumerThumb);
+
+                    //create send mail
+                    await channel.QueueDeclareAsync(queue: "create_sendmail_queue", durable: true, false, false);
+                    var consumerMail = new AsyncEventingBasicConsumer(channel);
+                    consumerMail.ReceivedAsync += async (model, ea) =>
+                    {
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+
+                        try
+                        {
+                            var mailRequest = JsonSerializer.Deserialize<SendMailRequestDto>(message);
+                            if (mailRequest != null)
+                            {
+                                await _emailSender.SendEmailAsync(mailRequest.Email, mailRequest.Subject, mailRequest.HtmlMessage);
+                                _logger.LogInformation("Email sent successfully to: {Email}", mailRequest.Email);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send email from queue message: {Message}", message);
+                        }
+                    };
+                    await channel.BasicConsumeAsync(queue: "create_sendmail_queue", autoAck: true, consumer: consumerMail);
 
                     await Task.Delay(Timeout.Infinite, stoppingToken);
                 }

@@ -99,7 +99,12 @@ docker-compose up -d
       "ClientId": "YourClientID",
       "ClientSecret": "YourClientSecret"
     }
-  }
+  },
+  "MailSettings": {
+    "UserName": "YourEmail@gmail.com",
+    "Password": "YourPassword"
+  },
+  "AllowedHosts": "*"
 }
 ```
 

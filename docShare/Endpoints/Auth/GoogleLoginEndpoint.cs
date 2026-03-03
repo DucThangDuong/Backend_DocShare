@@ -7,7 +7,6 @@ namespace API.Endpoints.Auth;
 public class GoogleLoginEndpoint : Endpoint<ReqGoogleLoginDTO>
 {
     public IGoogleAuthService AuthService { get; set; } = null!;
-
     public override void Configure()
     {
         Post("/api/auth/google");

@@ -41,6 +41,12 @@ namespace Application.DTOs
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
     }
+    public class SendMailRequestDto
+    {
+        public string Email { get; set; } = null!;
+        public string Subject { get; set; } = null!;
+        public string HtmlMessage { get; set; } = null!;
+    }
     public enum StorageType
     {
         Document,

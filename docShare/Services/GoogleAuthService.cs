@@ -14,12 +14,14 @@ namespace API.Services
         private readonly IConfiguration _configuration;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IUnitOfWork _repo;
+        private readonly RabbitMQService _rabbitMQ;
 
-        public GoogleAuthService(IConfiguration configuration, IJwtTokenService jwtTokenService, IUnitOfWork repo)
+        public GoogleAuthService(IConfiguration configuration, IJwtTokenService jwtTokenService, IUnitOfWork repo, RabbitMQService rabbitMQ)
         {
             _configuration = configuration;
             _jwtTokenService = jwtTokenService;
             _repo = repo;
+            _rabbitMQ = rabbitMQ;
         }
 
 
@@ -86,7 +88,13 @@ namespace API.Services
                 await _repo.SaveAllAsync();
 
                 string customJwtToken = _jwtTokenService.GenerateAccessToken(user.Id, email, user.Role!);
-
+                await _rabbitMQ.SendEmailResquest(new SendMailRequestDto
+                {
+                    Email = email,
+                    Subject = "Đăng nhập thành công vào DocShare",
+                    HtmlMessage = $"Xin chào {name},\n\nBạn đã đăng nhập thành công vào DocShare bằng tài khoản Google của mình. " +
+                    $"Nếu bạn không phải là người đã thực hiện đăng nhập này, vui lòng liên hệ với chúng tôi ngay lập tức.\n\nTrân trọng,\nĐội ngũ DocShare"
+                });
                 return new AuthResultDTO
                 {
                     IsSuccess = true,
