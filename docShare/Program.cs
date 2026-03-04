@@ -207,10 +207,13 @@ namespace API
             builder.Services.AddScoped<Features.User.Queries.GetUploadedDocsHandler>();
             builder.Services.AddScoped<Features.User.Queries.GetUserDocumentsHandler>();
             builder.Services.AddScoped<Features.User.Queries.GetUserStorageHandler>();
+            builder.Services.AddScoped<Features.User.Queries.GetForgotPassHandler>();
+            builder.Services.AddScoped<Features.User.Queries.GetVerifyOTPHandler>();
             builder.Services.AddScoped<Features.User.Commands.UpdateAvatarHandler>();
             builder.Services.AddScoped<Features.User.Commands.UpdatePasswordHandler>();
             builder.Services.AddScoped<Features.User.Commands.UpdateProfileHandler>();
             builder.Services.AddScoped<Features.User.Commands.UpdateUsernameHandler>();
+            builder.Services.AddScoped<Features.User.Commands.UpdateResetPassHandler>();
 
             // UserActivity Feature Handlers
             builder.Services.AddScoped<Features.UserActivity.Commands.FollowUserHandler>();

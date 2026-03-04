@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Application.DTOs
+﻿namespace Application.DTOs
 {
     public class ResUserPublicDto
     {
@@ -24,5 +18,9 @@ namespace Application.DTOs
         public long usedstorage { get; set; }
         public bool hasPassword { get; set; }
         public int? FollowingCount { get; set; }
+    }
+    public class ResResetPassDto
+    {
+        public string ResetToken { get; set; } =null!;
     }
 }

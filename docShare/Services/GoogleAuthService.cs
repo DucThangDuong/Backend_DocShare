@@ -3,9 +3,6 @@ using Application.Interfaces;
 using Application.IServices;
 using Domain.Entities;
 using Google.Apis.Auth;
-using System.Data;
-using System.Security.Claims;
-using static Google.Apis.Auth.OAuth2.Web.AuthorizationCodeWebApp;
 
 namespace API.Services
 {

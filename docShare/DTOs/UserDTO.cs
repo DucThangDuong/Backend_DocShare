@@ -19,5 +19,13 @@ namespace API.DTOs
         [Required]
         public string NewPassword { get; set; } = null!;
     }
+    public class ReqUpdateResetPassDto { 
+        [Required]
+        public string Email { get; set; } = null!;
+        [Required]
+        public string NewPassword { get; set; } = null!;    
+        [Required]
+        public string ResetToken { get; set; } = null!;
+    }
 
 }

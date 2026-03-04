@@ -17,15 +17,15 @@ namespace API.Services
         {
             _mailSettings = mailSettings.Value;
         }
-        public Task SendEmailAsync(string email, string subject, string htmlMessage)
+        public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            var client = new SmtpClient("smtp.gmail.com", 587)
+            using var client = new SmtpClient("smtp.gmail.com", 587)
             {
-                Credentials = new NetworkCredential(_mailSettings.UserName,_mailSettings.Password),
-                EnableSsl =true,
-                UseDefaultCredentials = false
+                UseDefaultCredentials = false,
+                Credentials = new NetworkCredential(_mailSettings.UserName, _mailSettings.Password),
+                EnableSsl = true,
             };
-            return client.SendMailAsync(new MailMessage(_mailSettings.UserName!, email,subject,htmlMessage));
+            await client.SendMailAsync(new MailMessage(_mailSettings.UserName!, email, subject, htmlMessage));
         }
     }
 }
