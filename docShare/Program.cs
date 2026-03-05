@@ -41,8 +41,8 @@ namespace API
             // mail settings
             builder.Services.AddTransient<IEmailSender, MailSender>();
             builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
-            
-            
+
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.AddPolicy("auth_strict", httpContext =>
@@ -253,6 +253,20 @@ namespace API
             builder.Services.AddHostedService<RabbitMQWorker>();
 
             var app = builder.Build();
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<DocShareContext>();
+                    context.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "Có lỗi xảy ra khi tự động chạy Migration.");
+                }
+            }
             StringHelpers.Initialize(builder.Configuration);
             if (!app.Environment.IsDevelopment())
             {

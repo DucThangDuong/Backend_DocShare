@@ -1,5 +1,4 @@
-﻿using API.DTOs;
-using Application.Common;
+﻿using Application.Common;
 using Application.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 namespace API.Features.User.Commands

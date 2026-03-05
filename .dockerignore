@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+.github
+
+# Visual Studio
+.vs
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# NuGet
+**/packages/
+*.nupkg
+*nuget.config
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Docker
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# Documentation
+README.md
+LICENSE
+*.md
+
+# SQL scripts
+*.sql
+
+# Misc
+**/*.log
+**/*.bak
+**/*.tmp
