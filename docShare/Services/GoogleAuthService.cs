@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 using Application.Interfaces;
 using Application.IServices;
 using Domain.Entities;
@@ -36,7 +36,7 @@ namespace API.Services
             }
             catch (InvalidJwtException)
             {
-                return new AuthResultDTO { IsSuccess = false, ErrorMessage = "Token Google không hợp lệ hoặc đã hết hạn." };
+                return new AuthResultDTO { IsSuccess = false, ErrorMessage = "Token Google kh�ng h?p l? ho?c d� h?t h?n." };
             }
             try
             {
@@ -46,7 +46,7 @@ namespace API.Services
                 string name = payload.Name;
                 string picture = payload.Picture;
                 string googleId = payload.Subject;
-                var user = await _repo.usersRepo.GetByEmailAsync(email);
+                var user = await _repo.UsersRepo.GetByEmailAsync(email);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
                 if (user == null)
                 {
@@ -66,7 +66,7 @@ namespace API.Services
                         LoginProvider = "Google"
                     };
 
-                    _repo.usersRepo.CreateUser(user);
+                    _repo.UsersRepo.CreateUser(user);
                 }
                 else
                 {
@@ -82,15 +82,15 @@ namespace API.Services
                     user.RefreshTokenExpiryTime = refreshToken.ExpiryDate;
                     user.LoginProvider = "Google";
                 }
-                await _repo.SaveAllAsync();
+                await _repo.SaveChangesAsync();
 
                 string customJwtToken = _jwtTokenService.GenerateAccessToken(user.Id, email, user.Role!);
                 await _rabbitMQ.SendEmailResquest(new SendMailRequestDto
                 {
                     Email = email,
-                    Subject = "Đăng nhập thành công vào DocShare",
-                    HtmlMessage = $"Xin chào {name},\n\nBạn đã đăng nhập thành công vào DocShare bằng tài khoản Google của mình. " +
-                    $"Nếu bạn không phải là người đã thực hiện đăng nhập này, vui lòng liên hệ với chúng tôi ngay lập tức.\n\nTrân trọng,\nĐội ngũ DocShare"
+                    Subject = "�ang nh?p th�nh c�ng v�o DocShare",
+                    HtmlMessage = $"Xin ch�o {name},\n\nB?n d� dang nh?p th�nh c�ng v�o DocShare b?ng t�i kho?n Google c?a m�nh. " +
+                    $"N?u b?n kh�ng ph?i l� ngu?i d� th?c hi?n dang nh?p n�y, vui l�ng li�n h? v?i ch�ng t�i ngay l?p t?c.\n\nTr�n tr?ng,\n�?i ngu DocShare"
                 });
                 return new AuthResultDTO
                 {
@@ -101,8 +101,9 @@ namespace API.Services
             }
             catch (Exception ex)
             {
-                return new AuthResultDTO { IsSuccess = false, ErrorMessage = $"Đã xảy ra lỗi trong quá trình xử lý đăng nhập Google: {ex.Message}" };
+                return new AuthResultDTO { IsSuccess = false, ErrorMessage = $"�� x?y ra l?i trong qu� tr�nh x? l� dang nh?p Google: {ex.Message}" };
             }
         }
     }
 }
+

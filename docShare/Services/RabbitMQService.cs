@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 using Application.Interfaces;
 using Application.IServices;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -211,12 +211,12 @@ namespace API.Services
             {
                 var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-                var document = await unitOfWork.documentsRepo.GetDocByIDAsync(result.DocId);
+                var document = await unitOfWork.DocumentsRepo.GetDocByIdAsync(result.DocId);
                 if (document != null)
                 {
                     document.Thumbnail = result.ThumbnailUrl;
-                    unitOfWork.documentsRepo.Update(document);
-                    await unitOfWork.SaveAllAsync();
+                    unitOfWork.DocumentsRepo.Update(document);
+                    await unitOfWork.SaveChangesAsync();
 
                     _logger.LogInformation("Updated Thumbnail for DocId: {Id}", result.DocId);
                 }

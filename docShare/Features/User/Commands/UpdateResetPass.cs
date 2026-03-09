@@ -1,4 +1,4 @@
-﻿using Application.Common;
+using Application.Common;
 using Application.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 namespace API.Features.User.Commands
@@ -26,7 +26,7 @@ namespace API.Features.User.Commands
                 if (resetToken == cmd.ResetToken)
                 {
                     user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(cmd.NewPassword);
-                    await _repo.SaveChangeAsync();
+                    await _repo.SaveChangesAsync();
                     _cache.Remove(cacheKey);
                     return Result.Success();
                 }
@@ -43,3 +43,4 @@ namespace API.Features.User.Commands
         }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using Amazon.Runtime.Internal.Util;
+using Amazon.Runtime.Internal.Util;
 using Application.Common;
 using Application.DTOs;
 using Application.Interfaces;
@@ -49,4 +49,5 @@ public class GetDocumentsOfTagHandler : IQueryHandler<GetDocumentsByTagQuery, Li
         return Result<List<ResSummaryDocumentDto>>.Success(result);
     }
 }
+
 

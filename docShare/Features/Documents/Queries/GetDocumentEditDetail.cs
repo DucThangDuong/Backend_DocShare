@@ -14,7 +14,7 @@ public class GetDocumentEditDetailHandler : IQueryHandler<GetDocumentEditDetailQ
 
     public async Task<Result<ResDocumentDetailEditDto?>> HandleAsync(GetDocumentEditDetailQuery query, CancellationToken ct = default)
     {
-        if (!await _repo.HasValue(query.DocId))
+        if (!await _repo.ExistsAsync(query.DocId))
             return Result<ResDocumentDetailEditDto?>.Failure("Không tìm thấy tài liệu.", 404);
 
         var result = await _repo.GetDocumentDetailEditAsync(query.UserId, query.DocId);
@@ -24,3 +24,4 @@ public class GetDocumentEditDetailHandler : IQueryHandler<GetDocumentEditDetailQ
         return Result<ResDocumentDetailEditDto?>.Success(result);
     }
 }
+

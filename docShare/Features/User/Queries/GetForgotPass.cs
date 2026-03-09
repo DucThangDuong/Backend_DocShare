@@ -1,4 +1,4 @@
-﻿using API.Services;
+using API.Services;
 using Application.Common;
 using Application.Interfaces;
 using Application.DTOs;
@@ -21,21 +21,21 @@ namespace API.Features.User.Queries
         }
         public async Task<Result<bool>> HandleAsync(GetForgotPassQuery query, CancellationToken ct = default)
         {
-            bool ishas = await _repo.HasEmailAsync(query.Email);
+            bool ishas = await _repo.EmailExistsAsync(query.Email);
             if (ishas)
             {
                 string OTP = Random.Shared.Next(100000, 999999).ToString();
                 await _rabbitMQ.SendEmailResquest(new SendMailRequestDto
                 {
                     Email = query.Email,
-                    Subject = "Mã xác thực đặt lại mật khẩu của bạn",
-                    HtmlMessage = $"Xin chào,\r\n\r\n" +
-                    $"Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.\r\n" +
-                    $"Vui lòng sử dụng mã xác thực dưới đây để tiếp tục:\r\n\r\n" +
-                    $"Mã OTP: {OTP}\r\n\r\n" +
-                    $"Mã này có hiệu lực trong 5 phút và chỉ sử dụng một lần.\r\n\r\n" +
-                    $"Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.\r\n" +
-                    $"Vì lý do bảo mật, không chia sẻ mã này với bất kỳ ai.\r\n\r\nTrân trọng."
+                    Subject = "M� x�c th?c d?t l?i m?t kh?u c?a b?n",
+                    HtmlMessage = $"Xin ch�o,\r\n\r\n" +
+                    $"Ch�ng t�i d� nh?n du?c y�u c?u d?t l?i m?t kh?u cho t�i kho?n c?a b?n.\r\n" +
+                    $"Vui l�ng s? d?ng m� x�c th?c du?i d�y d? ti?p t?c:\r\n\r\n" +
+                    $"M� OTP: {OTP}\r\n\r\n" +
+                    $"M� n�y c� hi?u l?c trong 5 ph�t v� ch? s? d?ng m?t l?n.\r\n\r\n" +
+                    $"N?u b?n kh�ng th?c hi?n y�u c?u n�y, vui l�ng b? qua email.\r\n" +
+                    $"V� l� do b?o m?t, kh�ng chia s? m� n�y v?i b?t k? ai.\r\n\r\nTr�n tr?ng."
                 });
                 string cacheKey = $"ForgotPass_{query.Email}";
                 CacheOtpDTO otpDTO = new CacheOtpDTO
@@ -51,3 +51,4 @@ namespace API.Features.User.Queries
         }
     }
 }
+

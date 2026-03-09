@@ -14,19 +14,22 @@ namespace Infrastructure.Repositories
 
 
 
-        public void  Create(Document document)
+        public void Add(Document document)
         {
              _context.Documents.Add(document);
         }
 
-        public async Task MoveToTrash(int docID)
+        public async Task MoveToTrashAsync(int docId)
         {
-            var docchange = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docID);
-            docchange!.IsDeleted = 1;
-            _context.Documents.Update(docchange);
+            var docchange = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docId);
+            if(docchange != null) 
+            {
+                docchange.IsDeleted = 1;
+                _context.Documents.Update(docchange);
+            }
         }
 
-        public async Task<Document?> GetDocByIDAsync(int docId)
+        public async Task<Document?> GetDocByIdAsync(int docId)
         {
             return await _context.Documents.FirstOrDefaultAsync(e => e.Id == docId);
         }
@@ -53,11 +56,11 @@ namespace Infrastructure.Repositories
                 }).ToListAsync();
         }
 
-        public async Task<ResDocumentDetailDto?> GetDocByUserIDAsync(int docID, int? currentUserId)
+        public async Task<ResDocumentDetailDto?> GetDocDetailByIdAsync(int docId, int? currentUserId)
         {
             var query = _context.Documents
                 .AsNoTracking()
-                .Where(e => e.Id == docID)
+                .Where(e => e.Id == docId)
                 .Select(d => new ResDocumentDetailDto
                 {
                     Id = d.Id,
@@ -81,9 +84,9 @@ namespace Infrastructure.Repositories
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<bool> HasValue(int docID)
+        public async Task<bool> ExistsAsync(int docId)
         {
-            return await _context.Documents.AsNoTracking().AnyAsync(e => e.Id == docID);
+            return await _context.Documents.AsNoTracking().AnyAsync(e => e.Id == docId);
         }
 
         public void Update(Document document)
@@ -92,14 +95,17 @@ namespace Infrastructure.Repositories
 
         }
 
-        public async Task ClearFileContentUrl(int docid)
+        public async Task ClearFileContentUrlAsync(int docId)
         {
-            var doc = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docid);
-            doc!.FileUrl = String.Empty;
-            doc.SizeInBytes = 0;
-            doc.Thumbnail = null;
-            doc.UpdatedAt = DateTime.UtcNow;
-            doc.PageCount = 0;
+            var doc = await _context.Documents.FirstOrDefaultAsync(e => e.Id == docId);
+            if (doc != null)
+            {
+                doc.FileUrl = String.Empty;
+                doc.SizeInBytes = 0;
+                doc.Thumbnail = null;
+                doc.UpdatedAt = DateTime.UtcNow;
+                doc.PageCount = 0;
+            }
         }
 
         public async Task<ResUserStatsDto?> GetUserStatsAsync(int userId)
@@ -142,7 +148,7 @@ namespace Infrastructure.Repositories
         }
 
 
-        public async Task SaveChangeAsync()
+        public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }

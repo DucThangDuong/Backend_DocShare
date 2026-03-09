@@ -31,7 +31,7 @@ public class UpdateDocumentHandler : ICommandHandler<UpdateDocumentCommand>
 
     public async Task<Result> HandleAsync(UpdateDocumentCommand cmd, CancellationToken ct = default)
     {
-        var doc = await _repo.documentsRepo.GetDocByIDAsync(cmd.DocId);
+        var doc = await _repo.DocumentsRepo.GetDocByIdAsync(cmd.DocId);
         if (doc == null) return Result.Failure("Tài liệu không tồn tại.", 404);
         if (doc.UploaderId != cmd.UserId) return Result.Failure("Forbidden", 403);
 
@@ -58,27 +58,28 @@ public class UpdateDocumentHandler : ICommandHandler<UpdateDocumentCommand>
 
         if (cmd.UniversitySectionId != null)
         {
-            if (!await _repo.universititesRepo.HasUniSection(cmd.UniversitySectionId.Value))
+            if (!await _repo.UniversitiesRepo.SectionExistsAsync(cmd.UniversitySectionId.Value))
                 return Result.Failure("Khoa/Ngành không hợp lệ.");
             doc.UniversitySectionId = cmd.UniversitySectionId.Value;
         }
         if (cmd.UniversityId == null) doc.UniversitySectionId = null;
 
-        await _repo.tagsRepo.RemoveAllTagsOfDocIdAsync(cmd.DocId);
+        await _repo.TagsRepo.ClearTagsByDocIdAsync(cmd.DocId);
         if (cmd.Tags != null)
         {
             foreach (var tagName in cmd.Tags)
             {
                 string slug = StringHelpers.GenerateSlug(tagName);
-                var existing = await _repo.tagsRepo.HasValue(slug, tagName);
+                var existing = await _repo.TagsRepo.GetBySlugAndNameAsync(slug, tagName);
                 doc.Tags.Add(existing ?? new Tag { Name = tagName, Slug = slug });
             }
         }
 
         doc.UpdatedAt = DateTime.UtcNow;
-        _repo.documentsRepo.Update(doc);
-        await _repo.SaveAllAsync();
+        _repo.DocumentsRepo.Update(doc);
+        await _repo.SaveChangesAsync();
         _cache.Remove($"doc_detail_{cmd.DocId}_{cmd.UserId}");
         return Result.Success();
     }
 }
+

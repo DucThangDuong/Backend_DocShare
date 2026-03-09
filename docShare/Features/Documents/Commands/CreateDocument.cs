@@ -59,7 +59,7 @@ public class CreateDocumentHandler : ICommandHandler<CreateDocumentCommand>
 
         if (cmd.UniversityId != null && cmd.UniversitySectionId != null)
         {
-            if (!await _repo.universititesRepo.HasUniSection(cmd.UniversitySectionId.Value))
+            if (!await _repo.UniversitiesRepo.SectionExistsAsync(cmd.UniversitySectionId.Value))
                 return Result.Failure("Khoa/Ngành không hợp lệ.");
             newDoc.UniversitySectionId = cmd.UniversitySectionId.Value;
         }
@@ -69,13 +69,13 @@ public class CreateDocumentHandler : ICommandHandler<CreateDocumentCommand>
             foreach (var tagName in cmd.Tags)
             {
                 string slug = StringHelpers.GenerateSlug(tagName);
-                var existing = await _repo.tagsRepo.HasValue(slug, tagName);
+                var existing = await _repo.TagsRepo.GetBySlugAndNameAsync(slug, tagName);
                 newDoc.Tags.Add(existing ?? new Tag { Name = tagName, Slug = slug });
             }
         }
 
-        _repo.documentsRepo.Create(newDoc);
-        await _repo.SaveAllAsync();
+        _repo.DocumentsRepo.Add(newDoc);
+        await _repo.SaveChangesAsync();
         _cache.Remove($"user_stats_{cmd.UserId}");
 
         await _rabbitMQ.SendThumbnailRequest(new ThumbRequestEvent
@@ -86,3 +86,4 @@ public class CreateDocumentHandler : ICommandHandler<CreateDocumentCommand>
         return Result.Success();
     }
 }
+

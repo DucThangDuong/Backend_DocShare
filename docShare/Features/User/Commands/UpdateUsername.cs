@@ -16,15 +16,16 @@ public class UpdateUsernameHandler
 
     public async Task<Result<string>> HandleAsync(UpdateUsernameCommand cmd, CancellationToken ct = default)
     {
-        if (!await _repo.HasValue(cmd.UserId))
+        if (!await _repo.ExistsAsync(cmd.UserId))
             return Result<string>.Failure("Token không hợp lệ hoặc thiếu thông tin định danh.", 401);
 
-        bool exists = await _repo.HasUserNameAsync(cmd.Username);
+        bool exists = await _repo.UsernameExistsAsync(cmd.Username);
         if (exists)
             return Result<string>.Failure("Username đã tồn tại.", 409);
 
-        await _repo.UpdateUserNameAsync(cmd.Username, cmd.UserId);
-        await _repo.SaveChangeAsync();
+        await _repo.UpdateUsernameAsync(cmd.UserId, cmd.Username);
+        await _repo.SaveChangesAsync();
         return Result<string>.Success(cmd.Username);
     }
 }
+

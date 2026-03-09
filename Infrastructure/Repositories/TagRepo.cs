@@ -18,7 +18,7 @@ namespace Infrastructure.Repositories
             _context.Tags.Add(tag);
         }
 
-        public async Task RemoveAllTagsOfDocIdAsync(int docId)
+        public async Task ClearTagsByDocIdAsync(int docId)
         {
             var document = await _context.Documents
                                          .Include(d => d.Tags)
@@ -33,12 +33,12 @@ namespace Infrastructure.Repositories
 
 
 
-        public async Task<Tag?> HasValue(string tagSlug, string tag)
+        public async Task<Tag?> GetBySlugAndNameAsync(string tagSlug, string name)
         {
-            return await _context.Tags.FirstOrDefaultAsync(e => e.Name == tag && e.Slug == tagSlug);
+            return await _context.Tags.FirstOrDefaultAsync(e => e.Name == name && e.Slug == tagSlug);
         }
 
-        public async Task SaveChangeAsync()
+        public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }

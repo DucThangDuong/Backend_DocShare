@@ -24,14 +24,14 @@ public class RegisterEndpoint : Endpoint<ReqRegisterDto>
         }
         try
         {
-            bool isEmailExists = await Repo.HasEmailAsync(req.Email);
+            bool isEmailExists = await Repo.EmailExistsAsync(req.Email);
             if (isEmailExists)
             {
                 await Send.ResponseAsync(new { message = "Email này đã tồn tại" }, 409, ct);
                 return;
             }
-            await Repo.CreateUserCustom(req.Email, req.Password, req.Fullname);
-            await Repo.SaveChangeAsync();
+            await Repo.RegisterLocalUserAsync(req.Email, req.Password, req.Fullname);
+            await Repo.SaveChangesAsync();
             await Send.ResponseAsync(null, 201, ct);
         }
         catch (Exception ex)
@@ -40,3 +40,4 @@ public class RegisterEndpoint : Endpoint<ReqRegisterDto>
         }
     }
 }
+

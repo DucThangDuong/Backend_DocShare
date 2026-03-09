@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class UniversitiesRepo : IUniversitites
+    public class UniversitiesRepo : IUniversities
     {
         public readonly DocShareContext _context;
         public UniversitiesRepo(DocShareContext context)
         {
             _context = context;
         }
-        public async Task<bool> HasValue(int uniId)
+        public async Task<bool> ExistsAsync(int uniId)
         {
             return await _context.Universities.AsNoTracking().AnyAsync(e => e.Id == uniId);
         }
@@ -29,13 +29,13 @@ namespace Infrastructure.Repositories
             await _context.UniversitySections.AddAsync(section);
             return section;
         }
-        public async Task<bool> HasUniSection(int sectionId)
+        public async Task<bool> SectionExistsAsync(int sectionId)
         {
             return await _context.UniversitySections.AsNoTracking().AnyAsync(e => e.Id == sectionId);
         }
 
 
-        public async Task SaveChangeAsync()
+        public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }

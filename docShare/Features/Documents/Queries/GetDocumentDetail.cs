@@ -21,10 +21,10 @@ public class GetDocumentDetailHandler : IQueryHandler<GetDocumentDetailQuery, Re
         if (_cache.TryGetValue(cacheKey, out ResDocumentDetailDto? cached))
             return Result<ResDocumentDetailDto?>.Success(cached);
 
-        if (!await _repo.HasValue(query.DocId))
+        if (!await _repo.ExistsAsync(query.DocId))
             return Result<ResDocumentDetailDto?>.Failure("Không tìm thấy tài liệu.", 404);
 
-        var result = await _repo.GetDocByUserIDAsync(query.DocId, query.CurrentUserId);
+        var result = await _repo.GetDocDetailByIdAsync(query.DocId, query.CurrentUserId);
         if (result == null)
             return Result<ResDocumentDetailDto?>.Failure("Không tìm thấy tài liệu.", 404);
 
@@ -32,3 +32,4 @@ public class GetDocumentDetailHandler : IQueryHandler<GetDocumentDetailQuery, Re
         return Result<ResDocumentDetailDto?>.Success(result);
     }
 }
+

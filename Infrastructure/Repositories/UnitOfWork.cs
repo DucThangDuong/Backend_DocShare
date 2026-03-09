@@ -6,21 +6,21 @@ namespace Infrastructure.Repositories
     {
         private readonly DocShareContext _context;
 
-        public IUsers usersRepo { get; private set; }
-        public IDocuments documentsRepo { get; private set; }
-        public ITags tagsRepo { get; private set; }
+        public IUsers UsersRepo { get; private set; }
+        public IDocuments DocumentsRepo { get; private set; }
+        public ITags TagsRepo { get; private set; }
 
-        public IUniversitites universititesRepo {  get; private set; }
+        public IUniversities UniversitiesRepo {  get; private set; }
 
         public UnitOfWork(DocShareContext context)
         {
             _context = context;
-            usersRepo = new UsersRepo(context);
-            documentsRepo = new DocumentsRepo(context);
-            tagsRepo = new TagRepo(context);
-            universititesRepo =new UniversitiesRepo(context);
+            UsersRepo = new UsersRepo(context);
+            DocumentsRepo = new DocumentsRepo(context);
+            TagsRepo = new TagRepo(context);
+            UniversitiesRepo = new UniversitiesRepo(context);
         }
-        public async Task SaveAllAsync()
+        public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }

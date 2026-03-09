@@ -15,12 +15,13 @@ public class ClearDocumentFileHandler : ICommandHandler<ClearDocumentFileCommand
 
     public async Task<Result> HandleAsync(ClearDocumentFileCommand cmd, CancellationToken ct = default)
     {
-        if (!await _repo.HasValue(cmd.DocId))
+        if (!await _repo.ExistsAsync(cmd.DocId))
             return Result.Failure("Không tìm thấy tài liệu", 404);
 
-        await _repo.ClearFileContentUrl(cmd.DocId);
-        await _repo.SaveChangeAsync();
+        await _repo.ClearFileContentUrlAsync(cmd.DocId);
+        await _repo.SaveChangesAsync();
         _cache.Remove($"doc_detail_{cmd.DocId}_{cmd.UserId}");
         return Result.Success();
     }
 }
+

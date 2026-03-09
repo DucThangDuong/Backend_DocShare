@@ -10,7 +10,7 @@ namespace Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task AddVoteDocumentAsync(int userId, int docId, bool? isLike)
+        public async Task ToggleDocumentVoteAsync(int userId, int docId, bool? isLike)
         {
             var existingVote = await _context.DocumentVotes
                                              .FirstOrDefaultAsync(v => v.UserId == userId && v.DocumentId == docId);
@@ -40,7 +40,7 @@ namespace Infrastructure.Repositories
             }
         }
 
-        public async Task AddUserSaveDocumentAsync(int userId, int docId)
+        public async Task ToggleSaveDocumentAsync(int userId, int docId)
         {
             var savedDoc = await _context.SavedDocuments
                                          .FirstOrDefaultAsync(s => s.UserId == userId && s.DocumentId == docId);
@@ -64,7 +64,7 @@ namespace Infrastructure.Repositories
 
 
 
-        public void AddFollowing(int followerId, int followedId)
+        public void FollowUser(int followerId, int followedId)
         {
             UserFollow result = new UserFollow
             {
@@ -79,15 +79,15 @@ namespace Infrastructure.Repositories
             return await _context.UserFollows.AsNoTracking().AnyAsync(f => f.FollowerId == followerId && f.FollowedId == followedId);
         }
 
-        public async Task RemoveFollowingAsync(int followerId, int followedId)
+        public async Task UnfollowUserAsync(int followerId, int followedId)
         {
-            var follow = _context.UserFollows.FirstOrDefault(f => f.FollowerId == followerId && f.FollowedId == followedId);
+            var follow = await _context.UserFollows.FirstOrDefaultAsync(f => f.FollowerId == followerId && f.FollowedId == followedId);
             if (follow != null)
             {
                 _context.UserFollows.Remove(follow);
             }
         }
-        public async Task SaveChangeAsync()
+        public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }

@@ -112,15 +112,11 @@ docker-compose up -d
 }
 ```
 
-**Bắt buộc:** Bạn cần truy cập MinIO (`http://localhost:9001`), đăng nhập bằng admin/password123 rồi tạo trước 2 bucket: `pdf-storage` và `avatar-storage`.
+**Bắt buộc:** Bạn cần truy cập MinIO (`http://localhost:9001`), đăng nhập bằng YourUserName/YourPassword rồi tạo trước 2 bucket: `pdf-storage` và `avatar-storage`.
 
 ### 5. Khởi tạo Database 
-Sử dụng công cụ command line của EF Core để đẩy thiết kế bảng vào SQL Server Docker:
-```bash
-cd docShare
-dotnet tool install --global dotnet-ef  # <- Chạy để cài giả sử máy bạn chưa có dotnet-ef
-dotnet ef database update --project ../Infrastructure/Infrastructure.csproj --startup-project API.csproj
-```
+Đây là file cơ sở dữ liệu tại dự án này:[base.sql](./base.sql).
+Bạn phải chạy file này trong SQL Server để tạo các bảng.
 
 ### 6. Chạy dự án Backend
 Tiếp tục đứng tại thư mục `docShare` trên terminal:
@@ -139,7 +135,6 @@ Database **DocShare** được thiết kế thông qua Entity Framework Core (Co
 - **Phân loại (Categories/Tags/Universities):** Các bảng cấu trúc mapping giúp tìm kiếm, filter theo trường đại học.
 - **Tương tác (Interactions):** Lưu trữ theo vết lượt thích (Like), lượt tải xuống (Download) và Nhận xét (Comments).
 
-> **Lưu ý:** Bạn có thể tham khảo cấu trúc hoặc script dữ liệu mẫu của cơ sở dữ liệu tại file [base.sql](./base.sql).
 
 ---
 

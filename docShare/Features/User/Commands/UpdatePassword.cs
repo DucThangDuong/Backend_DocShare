@@ -16,10 +16,10 @@ public class UpdatePasswordHandler
 
     public async Task<Result> HandleAsync(UpdatePasswordCommand cmd, CancellationToken ct = default)
     {
-        if (!await _repo.HasValue(cmd.UserId))
+        if (!await _repo.ExistsAsync(cmd.UserId))
             return Result.Failure("Không xác định được danh tính người dùng.", 401);
 
-        string? currentPasswordHash = await _repo.GetPasswordByUserId(cmd.UserId);
+        string? currentPasswordHash = await _repo.GetPasswordHashAsync(cmd.UserId);
         if (!string.IsNullOrEmpty(currentPasswordHash))
         {
             if (string.IsNullOrEmpty(cmd.OldPassword))
@@ -32,8 +32,9 @@ public class UpdatePasswordHandler
                 return Result.Failure("Mật khẩu mới không được trùng với mật khẩu cũ.");
         }
 
-        await _repo.UpdateUserPassword(cmd.NewPassword, cmd.UserId);
-        await _repo.SaveChangeAsync();
+        await _repo.UpdatePasswordAsync(cmd.UserId, cmd.NewPassword);
+        await _repo.SaveChangesAsync();
         return Result.Success();
     }
 }
+

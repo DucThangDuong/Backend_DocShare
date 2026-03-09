@@ -15,13 +15,13 @@ public class MoveToTrashHandler : ICommandHandler<MoveToTrashCommand>
 
     public async Task<Result> HandleAsync(MoveToTrashCommand cmd, CancellationToken ct = default)
     {
-        if (!await _repo.HasValue(cmd.DocId))
+        if (!await _repo.ExistsAsync(cmd.DocId))
             return Result.Failure("Không tìm thấy tài liệu.", 404);
         if (!cmd.IsDeleted)
             return Result.Failure("Yêu cầu không hợp lệ.");
 
-        await _repo.MoveToTrash(cmd.DocId);
-        await _repo.SaveChangeAsync();
+        await _repo.MoveToTrashAsync(cmd.DocId);
+        await _repo.SaveChangesAsync();
 
         if (cmd.UserId != 0)
         {
@@ -31,3 +31,4 @@ public class MoveToTrashHandler : ICommandHandler<MoveToTrashCommand>
         return Result.Success();
     }
 }
+

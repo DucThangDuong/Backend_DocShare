@@ -4,11 +4,11 @@ namespace Application.Interfaces
 {
     public interface ITags
     {
-        public Task<Tag?> HasValue(string tagSlug, string tag);
+        public Task<Tag?> GetBySlugAndNameAsync(string tagSlug, string name);
         public void Create(Tag tag);
 
 
-        public Task RemoveAllTagsOfDocIdAsync(int docId);
-        public Task SaveChangeAsync();
+        public Task ClearTagsByDocIdAsync(int docId);
+        public Task SaveChangesAsync();
     }
 }

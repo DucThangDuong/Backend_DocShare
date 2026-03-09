@@ -1,4 +1,4 @@
-﻿using API.DTOs;
+using API.DTOs;
 using Application.Common;
 using Application.DTOs;
 using Application.Interfaces;
@@ -26,7 +26,7 @@ namespace API.Features.User.Queries
         public async Task<Result<ResResetPassDto>> HandleAsync(GetVerifyOTPQuery query, CancellationToken ct = default)
         {
             string cacheKey = $"ForgotPass_{query.Email}";
-            bool ishas = await _repo.HasEmailAsync(query.Email);
+            bool ishas = await _repo.EmailExistsAsync(query.Email);
             if (!ishas) return Result<ResResetPassDto>.Failure("Email not found", 404);
             if (_cache.TryGetValue(cacheKey, out CacheOtpDTO? cachedOTP) && cachedOTP != null)
             {
@@ -58,3 +58,4 @@ namespace API.Features.User.Queries
         }
     }
 }
+

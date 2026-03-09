@@ -17,13 +17,14 @@ public class UpdateProfileHandler
 
     public async Task<Result<ResUserPrivate?>> HandleAsync(UpdateProfileCommand cmd, CancellationToken ct = default)
     {
-        if (!await _repo.HasValue(cmd.UserId))
+        if (!await _repo.ExistsAsync(cmd.UserId))
             return Result<ResUserPrivate?>.Failure("Token không hợp lệ hoặc thiếu thông tin định danh.", 401);
 
-        await _repo.UpdateUserProfile(cmd.UserId, cmd.Email, cmd.Password, cmd.FullName, cmd.UniversityId);
-        await _repo.SaveChangeAsync();
+        await _repo.UpdateUserProfileAsync(cmd.UserId, cmd.Email, cmd.Password, cmd.FullName, cmd.UniversityId);
+        await _repo.SaveChangesAsync();
 
         var updatedProfile = await _repo.GetUserPrivateProfileAsync(cmd.UserId);
         return Result<ResUserPrivate?>.Success(updatedProfile);
     }
 }
+

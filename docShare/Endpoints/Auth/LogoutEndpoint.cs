@@ -24,8 +24,8 @@ public class LogoutEndpoint : EndpointWithoutRequest
             int userId = HttpContext.User.GetUserId();
             if (userId != 0)
             {
-                await Repo.DeleteRefreshTokenAsync(userId);
-                await Repo.SaveChangeAsync();
+                await Repo.RevokeRefreshTokenAsync(userId);
+                await Repo.SaveChangesAsync();
             }
             await Send.ResponseAsync(new { message = "Đăng xuất thành công" }, 200, ct);
         }
@@ -35,3 +35,4 @@ public class LogoutEndpoint : EndpointWithoutRequest
         }
     }
 }
+

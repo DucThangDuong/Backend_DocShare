@@ -16,8 +16,9 @@ public class SaveDocumentHandler
 
     public async Task<Result> HandleAsync(SaveDocumentCommand cmd, CancellationToken ct = default)
     {
-        await _repo.AddUserSaveDocumentAsync(cmd.UserId, cmd.DocId);
-        await _repo.SaveChangeAsync();
+        await _repo.ToggleSaveDocumentAsync(cmd.UserId, cmd.DocId);
+        await _repo.SaveChangesAsync();
         return Result.Success();
     }
 }
+

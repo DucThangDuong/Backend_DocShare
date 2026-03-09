@@ -20,12 +20,13 @@ public class UpdateAvatarHandler
 
     public async Task<Result<string>> HandleAsync(UpdateAvatarCommand cmd, CancellationToken ct = default)
     {
-        if (!await _repo.HasValue(cmd.UserId))
+        if (!await _repo.ExistsAsync(cmd.UserId))
             return Result<string>.Failure("Token không hợp lệ hoặc thiếu thông tin định danh.", 401);
 
         await _storageService.UploadFileAsync(cmd.AvatarStream, cmd.AvatarFileName, cmd.ContentType, StorageType.Avatar);
-        await _repo.UpdateUserAvatar(cmd.UserId, cmd.AvatarFileName);
-        await _repo.SaveChangeAsync();
+        await _repo.UpdateUserAvatarAsync(cmd.UserId, cmd.AvatarFileName);
+        await _repo.SaveChangesAsync();
         return Result<string>.Success(cmd.AvatarFileName);
     }
 }
+

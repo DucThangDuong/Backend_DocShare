@@ -23,8 +23,9 @@ public class UnfollowUserHandler
         if (!isFollowing)
             return Result.Failure("Chưa theo dõi người dùng này.");
 
-        await _repo.RemoveFollowingAsync(cmd.FollowerId, cmd.FollowedId);
-        await _repo.SaveChangeAsync();
+        await _repo.UnfollowUserAsync(cmd.FollowerId, cmd.FollowedId);
+        await _repo.SaveChangesAsync();
         return Result.Success();
     }
 }
+

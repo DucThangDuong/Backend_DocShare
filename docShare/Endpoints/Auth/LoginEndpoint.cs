@@ -43,7 +43,7 @@ public class LoginEndpoint : Endpoint<ReqLoginDTo>
                 HttpOnly = true, Expires = refreshToken.ExpiryDate,
                 Secure = true, SameSite = SameSiteMode.None, IsEssential = true
             });
-            await Repo.SaveChangeAsync();
+            await Repo.SaveChangesAsync();
             await Send.ResponseAsync(new { success = true, message = "Đăng nhập thành công", accessToken }, 200, ct);
         }
         catch (Exception ex)
@@ -52,3 +52,4 @@ public class LoginEndpoint : Endpoint<ReqLoginDTo>
         }
     }
 }
+

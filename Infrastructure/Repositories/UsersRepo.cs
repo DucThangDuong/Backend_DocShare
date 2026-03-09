@@ -12,7 +12,7 @@ namespace Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task<bool> HasEmailAsync(string email)
+        public async Task<bool> EmailExistsAsync(string email)
         {
             return await _context.Users.AsNoTracking().AnyAsync(e => e.Email == email);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.Repositories
             return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.RefreshToken == refreshToken);
         }
 
-        public async Task DeleteRefreshTokenAsync(int userId)
+        public async Task RevokeRefreshTokenAsync(int userId)
         {
             User? userrevoke = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
             if (userrevoke != null)
@@ -62,7 +62,7 @@ namespace Infrastructure.Repositories
                 }).FirstOrDefaultAsync();
         }
 
-        public async Task UpdateUserProfile(int userId, string? email, string? password, string? fullname, int? universityId)
+        public async Task UpdateUserProfileAsync(int userId, string? email, string? password, string? fullname, int? universityId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (!string.IsNullOrWhiteSpace(email))
@@ -83,30 +83,30 @@ namespace Infrastructure.Repositories
                 user!.UniversityId = universityId;
             }
         }
-        public async Task UpdateUserAvatar(int userId, string avatarFileName)
+        public async Task UpdateUserAvatarAsync(int userId, string avatarFileName)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             user!.CustomAvatar = avatarFileName;
         }
 
-        public async Task<bool> HasUserNameAsync(string username)
+        public async Task<bool> UsernameExistsAsync(string username)
         {
             return await _context.Users.AsNoTracking().AnyAsync(e => e.Username == username);
         }
 
-        public async Task UpdateUserNameAsync(string username, int userId)
+        public async Task UpdateUsernameAsync(int userId, string username)
         {
             var user = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
-            user!.Username = username;
+            if (user != null) user.Username = username;
         }
 
-        public async Task UpdateUserPassword(string newPassword, int userId)
+        public async Task UpdatePasswordAsync(int userId, string newPassword)
         {
             var user = await _context.Users.FirstOrDefaultAsync(e => e.Id == userId);
-            user!.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            if (user != null) user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         }
 
-        public Task<string?> GetPasswordByUserId(int userId)
+        public Task<string?> GetPasswordHashAsync(int userId)
         {
             return _context.Users
                 .Where(u => u.Id == userId)
@@ -114,12 +114,12 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<bool> HasValue(int userId)
+        public async Task<bool> ExistsAsync(int userId)
         {
             return await _context.Users.AnyAsync(e => e.Id == userId);
         }
 
-        public async Task CreateUserCustom(string email, string password, string fullname)
+        public async Task RegisterLocalUserAsync(string email, string password, string fullname)
         {
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
             string username = email.Substring(0, email.LastIndexOf('@'));
@@ -145,14 +145,14 @@ namespace Infrastructure.Repositories
                 _context.Users.Add(newUser);
             }
         }
-        public async void CreateUser(User user)
+        public void CreateUser(User user)
         {
             _context.Users.Add(user);
         }
 
 
 
-        public async Task SaveChangeAsync()
+        public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }

@@ -23,8 +23,9 @@ public class FollowUserHandler
         if (alreadyFollowed)
             return Result.Failure("Đã theo dõi người dùng này.");
 
-        _repo.AddFollowing(cmd.FollowerId, cmd.FollowedId);
-        await _repo.SaveChangeAsync();
+        _repo.FollowUser(cmd.FollowerId, cmd.FollowedId);
+        await _repo.SaveChangesAsync();
         return Result.Success();
     }
 }
+

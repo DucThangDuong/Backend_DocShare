@@ -170,7 +170,7 @@ namespace API
             builder.Services.AddScoped<IDocuments, DocumentsRepo>();
             builder.Services.AddScoped<ITags, TagRepo>();
             builder.Services.AddScoped<IUserActivity, UserActivity>();
-            builder.Services.AddScoped<IUniversitites, UniversitiesRepo>();
+            builder.Services.AddScoped<IUniversities, UniversitiesRepo>();
 
             // Services
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -253,20 +253,20 @@ namespace API
             builder.Services.AddHostedService<RabbitMQWorker>();
 
             var app = builder.Build();
-            using (var scope = app.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                try
-                {
-                    var context = services.GetRequiredService<DocShareContext>();
-                    context.Database.Migrate();
-                }
-                catch (Exception ex)
-                {
-                    var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "Có lỗi xảy ra khi tự động chạy Migration.");
-                }
-            }
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var services = scope.ServiceProvider;
+            //    try
+            //    {
+            //        var context = services.GetRequiredService<DocShareContext>();
+            //        context.Database.Migrate();
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        var logger = services.GetRequiredService<ILogger<Program>>();
+            //        logger.LogError(ex, "Có lỗi xảy ra khi tự động chạy Migration.");
+            //    }
+            //}
             StringHelpers.Initialize(builder.Configuration);
             if (!app.Environment.IsDevelopment())
             {

@@ -16,8 +16,9 @@ public class VoteDocumentHandler
 
     public async Task<Result> HandleAsync(VoteDocumentCommand cmd, CancellationToken ct = default)
     {
-        await _repo.AddVoteDocumentAsync(cmd.UserId, cmd.DocId, cmd.IsLike);
-        await _repo.SaveChangeAsync();
+        await _repo.ToggleDocumentVoteAsync(cmd.UserId, cmd.DocId, cmd.IsLike);
+        await _repo.SaveChangesAsync();
         return Result.Success();
     }
 }
+
