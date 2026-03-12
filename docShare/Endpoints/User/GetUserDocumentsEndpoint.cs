@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.User.Queries;
+﻿using API.Extensions;
+using Application.Features.User.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.User;

@@ -3,6 +3,7 @@ using API.Extensions;
 using API.Services;
 using Application.Interfaces;
 using Application.IServices;
+using Application.Features;
 using FastEndpoints;
 using Infrastructure;
 using Infrastructure.Repositories;
@@ -171,56 +172,57 @@ namespace API
             builder.Services.AddScoped<ITags, TagRepo>();
             builder.Services.AddScoped<IUserActivity, UserActivity>();
             builder.Services.AddScoped<IUniversities, UniversitiesRepo>();
+            builder.Services.AddScoped<IApplicationDbContext, DocShareContext>();
 
             // Services
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
-            builder.Services.AddScoped<RabbitMQService>();
+            builder.Services.AddScoped<IRabbitMQService, RabbitMQService>();
 
             // Document Feature Handlers
-            builder.Services.AddScoped<Features.Documents.Commands.ClearDocumentFileHandler>();
-            builder.Services.AddScoped<Features.Documents.Commands.CreateDocumentHandler>();
-            builder.Services.AddScoped<Features.Documents.Commands.MoveToTrashHandler>();
-            builder.Services.AddScoped<Features.Documents.Commands.ScanDocumentHandler>();
-            builder.Services.AddScoped<Features.Documents.Commands.UpdateDocumentHandler>();
-            builder.Services.AddScoped<Features.Documents.Queries.GetDocsOfUserHandler>();
-            builder.Services.AddScoped<Features.Documents.Queries.GetDocumentDetailHandler>();
-            builder.Services.AddScoped<Features.Documents.Queries.GetDocumentEditDetailHandler>();
-            builder.Services.AddScoped<Features.Documents.Queries.GetUserDocStatsHandler>();
-            builder.Services.AddScoped<Features.Tags.Queries.GetDocumentsOfTagHandler>();
-            builder.Services.AddScoped<Features.Tags.Queries.GetTagHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Commands.ClearDocumentFileHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Commands.CreateDocumentHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Commands.MoveToTrashHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Commands.ScanDocumentHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Commands.UpdateDocumentHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Queries.GetDocsOfUserHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Queries.GetDocumentDetailHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Queries.GetDocumentEditDetailHandler>();
+            builder.Services.AddScoped<Application.Features.Documents.Queries.GetUserDocStatsHandler>();
+            builder.Services.AddScoped<Application.Features.Tags.Queries.GetDocumentsOfTagHandler>();
+            builder.Services.AddScoped<Application.Features.Tags.Queries.GetTagHandler>();
 
             // Universities Feature Handlers
-            builder.Services.AddScoped<Features.Universities.Queries.GetAllUniversitiesHandler>();
-            builder.Services.AddScoped<Features.Universities.Queries.GetSectionsHandler>();
-            builder.Services.AddScoped<Features.Universities.Queries.GetDocumentsOfSectionHandler>();
-            builder.Services.AddScoped<Features.Universities.Queries.GetPopularDocumentsHandler>();
-            builder.Services.AddScoped<Features.Universities.Queries.GetRecentDocumentsHandler>();
-            builder.Services.AddScoped<Features.Universities.Commands.AddSectionHandler>();
+            builder.Services.AddScoped<Application.Features.Universities.Queries.GetAllUniversitiesHandler>();
+            builder.Services.AddScoped<Application.Features.Universities.Queries.GetSectionsHandler>();
+            builder.Services.AddScoped<Application.Features.Universities.Queries.GetDocumentsOfSectionHandler>();
+            builder.Services.AddScoped<Application.Features.Universities.Queries.GetPopularDocumentsHandler>();
+            builder.Services.AddScoped<Application.Features.Universities.Queries.GetRecentDocumentsHandler>();
+            builder.Services.AddScoped<Application.Features.Universities.Commands.AddSectionHandler>();
 
             // User Feature Handlers
-            builder.Services.AddScoped<Features.User.Queries.GetLikedDocsHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetPrivateProfileHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetPublicProfileHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetPublicUserStatsHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetSavedDocsHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetUploadedDocsHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetUserDocumentsHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetUserStorageHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetForgotPassHandler>();
-            builder.Services.AddScoped<Features.User.Queries.GetVerifyOTPHandler>();
-            builder.Services.AddScoped<Features.User.Commands.UpdateAvatarHandler>();
-            builder.Services.AddScoped<Features.User.Commands.UpdatePasswordHandler>();
-            builder.Services.AddScoped<Features.User.Commands.UpdateProfileHandler>();
-            builder.Services.AddScoped<Features.User.Commands.UpdateUsernameHandler>();
-            builder.Services.AddScoped<Features.User.Commands.UpdateResetPassHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetLikedDocsHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetPrivateProfileHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetPublicProfileHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetPublicUserStatsHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetSavedDocsHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetUploadedDocsHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetUserDocumentsHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetUserStorageHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetForgotPassHandler>();
+            builder.Services.AddScoped<Application.Features.User.Queries.GetVerifyOTPHandler>();
+            builder.Services.AddScoped<Application.Features.User.Commands.UpdateAvatarHandler>();
+            builder.Services.AddScoped<Application.Features.User.Commands.UpdatePasswordHandler>();
+            builder.Services.AddScoped<Application.Features.User.Commands.UpdateProfileHandler>();
+            builder.Services.AddScoped<Application.Features.User.Commands.UpdateUsernameHandler>();
+            builder.Services.AddScoped<Application.Features.User.Commands.UpdateResetPassHandler>();
 
             // UserActivity Feature Handlers
-            builder.Services.AddScoped<Features.UserActivity.Commands.FollowUserHandler>();
-            builder.Services.AddScoped<Features.UserActivity.Commands.UnfollowUserHandler>();
-            builder.Services.AddScoped<Features.UserActivity.Commands.SaveDocumentHandler>();
-            builder.Services.AddScoped<Features.UserActivity.Commands.VoteDocumentHandler>();
-            builder.Services.AddScoped<Features.UserActivity.Queries.GetSavedDocumentsHandler>();
+            builder.Services.AddScoped<Application.Features.UserActivity.Commands.FollowUserHandler>();
+            builder.Services.AddScoped<Application.Features.UserActivity.Commands.UnfollowUserHandler>();
+            builder.Services.AddScoped<Application.Features.UserActivity.Commands.SaveDocumentHandler>();
+            builder.Services.AddScoped<Application.Features.UserActivity.Commands.VoteDocumentHandler>();
+            builder.Services.AddScoped<Application.Features.UserActivity.Queries.GetSavedDocumentsHandler>();
             // AWS S3
             builder.Services.AddDefaultAWSOptions(new Amazon.Extensions.NETCore.Setup.AWSOptions
             {

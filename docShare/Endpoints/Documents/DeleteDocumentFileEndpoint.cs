@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.Documents.Commands;
+﻿using API.Extensions;
+using Application.Features.Documents.Commands;
 using Application.Common;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,7 +27,7 @@ public class DeleteDocumentFileEndpoint : Endpoint<DeleteDocumentFileRequest>
         int userId = HttpContext.User.GetUserId();
         if (userId == 0)
         { 
-            await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); 
+            await Send.ResponseAsync(new { message = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh ngÆ°á»i dÃ¹ng." }, 401, ct); 
             return; 
         }
 

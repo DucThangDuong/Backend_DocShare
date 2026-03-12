@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.UserActivity.Commands;
+﻿using API.Extensions;
+using Application.Features.UserActivity.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -24,16 +24,16 @@ public class SaveDocumentEndpoint : Endpoint<SaveDocumentRequest>
     public override async Task HandleAsync(SaveDocumentRequest req, CancellationToken ct)
     {
         int userId = HttpContext.User.GetUserId();
-        if (userId == 0) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh ngÆ°á»i dÃ¹ng." }, 401, ct); return; }
 
         try
         {
-            var result = await Handler.HandleAsync(new Features.UserActivity.Commands.SaveDocumentCommand(userId, req.DocId), ct);
+            var result = await Handler.HandleAsync(new SaveDocumentCommand(userId, req.DocId), ct);
 
             if (!result.IsSuccess)
                 await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
             else
-                await Send.ResponseAsync(new { message = "Lưu tài liệu thành công" }, 200, ct);
+                await Send.ResponseAsync(new { message = "LÆ°u tÃ i liá»‡u thÃ nh cÃ´ng" }, 200, ct);
         }
         catch (Exception ex)
         {

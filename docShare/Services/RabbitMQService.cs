@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace API.Services
 {
-    public class RabbitMQService : IDisposable
+    public class RabbitMQService : IRabbitMQService, IDisposable
     {
         private readonly ILogger<RabbitMQService> _logger;
         private readonly IConnection _connection;

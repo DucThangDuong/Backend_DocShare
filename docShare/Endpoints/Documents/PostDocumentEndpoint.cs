@@ -1,6 +1,6 @@
-using API.DTOs;
+﻿using API.DTOs;
 using API.Extensions;
-using API.Features.Documents.Commands;
+using Application.Features.Documents.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -22,17 +22,17 @@ public class PostDocumentEndpoint : Endpoint<ReqCreateDocumentDTO>
     {
         if (req.File == null || req.File.Length == 0)
         { 
-            await Send.ResponseAsync(new { message = "Vui lòng chọn file." }, 400, ct); 
+            await Send.ResponseAsync(new { message = "Vui lÃ²ng chá»n file." }, 400, ct); 
             return; 
         }
         if (Path.GetExtension(req.File.FileName).ToLower() != ".pdf")
         { 
-            await Send.ResponseAsync(new { message = "Chỉ chấp nhận file PDF." }, 400, ct);
+            await Send.ResponseAsync(new { message = "Chá»‰ cháº¥p nháº­n file PDF." }, 400, ct);
             return; 
         }
         int userId = HttpContext.User.GetUserId();
         if (userId == 0)
-        { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+        { await Send.ResponseAsync(new { message = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh ngÆ°á»i dÃ¹ng." }, 401, ct); return; }
         using var stream = req.File.OpenReadStream();
         var command = new CreateDocumentCommand(
             UserId: userId, Title: req.Title, Status: req.Status,

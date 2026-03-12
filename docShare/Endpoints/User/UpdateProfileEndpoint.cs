@@ -1,6 +1,6 @@
-using API.DTOs;
+﻿using API.DTOs;
 using API.Extensions;
-using API.Features.User.Commands;
+using Application.Features.User.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -20,7 +20,7 @@ public class UpdateProfileEndpoint : Endpoint<ReqUserUpdateDto>
     public override async Task HandleAsync(ReqUserUpdateDto req, CancellationToken ct)
     {
         int userId = HttpContext.User.GetUserId();
-        if (userId == 0) { await Send.ResponseAsync(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "Token khÃ´ng há»£p lá»‡ hoáº·c thiáº¿u thÃ´ng tin Ä‘á»‹nh danh." }, 401, ct); return; }
 
         try
         {
@@ -33,7 +33,7 @@ public class UpdateProfileEndpoint : Endpoint<ReqUserUpdateDto>
         }
         catch (Exception ex)
         {
-            await Send.ResponseAsync(new { message = $"Lỗi server: {ex.Message}" }, 500, ct);
+            await Send.ResponseAsync(new { message = $"Lá»—i server: {ex.Message}" }, 500, ct);
         }
     }
 }

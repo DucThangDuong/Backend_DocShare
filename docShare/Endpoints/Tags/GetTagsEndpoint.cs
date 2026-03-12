@@ -1,4 +1,4 @@
-using API.Features.Tags.Queries;
+using Application.Features.Tags.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.Tags;

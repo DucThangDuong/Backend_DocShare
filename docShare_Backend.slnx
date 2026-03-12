@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/UnitTest/">
+    <Project Path="XUnitTestProject1/XUnitTestProject1.csproj" Id="d9c5a595-fa0a-4cc2-82bc-941718989445" />
+  </Folder>
   <Project Path="Application/Application.csproj" Id="614675d4-6321-4d70-a5ee-8472143da7b4" />
   <Project Path="docShare/API.csproj" />
   <Project Path="Domain/Domain.csproj" Id="03f7054a-6968-40c5-8826-6ad8e13be575" />

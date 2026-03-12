@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
-
+using Application.Interfaces;
 namespace Infrastructure;
 
-public partial class DocShareContext : DbContext
+public partial class DocShareContext : DbContext, IApplicationDbContext
 {
     public DocShareContext()
     {

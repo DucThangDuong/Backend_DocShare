@@ -1,4 +1,4 @@
-using API.Features.User.Queries;
+﻿using Application.Features.User.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.User;

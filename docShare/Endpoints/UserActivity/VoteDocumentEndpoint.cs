@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.UserActivity.Commands;
+﻿using API.Extensions;
+using Application.Features.UserActivity.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -25,7 +25,7 @@ public class VoteDocumentEndpoint : Endpoint<VoteDocumentRequest>
     public override async Task HandleAsync(VoteDocumentRequest req, CancellationToken ct)
     {
         int userId = HttpContext.User.GetUserId();
-        if (userId == 0) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh ngÆ°á»i dÃ¹ng." }, 401, ct); return; }
 
         try
         {
@@ -34,7 +34,7 @@ public class VoteDocumentEndpoint : Endpoint<VoteDocumentRequest>
             if (!result.IsSuccess)
                 await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
             else
-                await Send.ResponseAsync(new { message = "Đã ghi nhận tương tác." }, 200, ct);
+                await Send.ResponseAsync(new { message = "ÄÃ£ ghi nháº­n tÆ°Æ¡ng tÃ¡c." }, 200, ct);
         }
         catch (Exception ex)
         {

@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.User.Commands;
+﻿using API.Extensions;
+using Application.Features.User.Commands;
 using Application.IServices;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,11 +26,11 @@ public class UpdateAvatarEndpoint : Endpoint<UpdateAvatarRequest>
     public override async Task HandleAsync(UpdateAvatarRequest req, CancellationToken ct)
     {
         int userId = HttpContext.User.GetUserId();
-        if (userId == 0) { await Send.ResponseAsync(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "Token khÃ´ng há»£p lá»‡ hoáº·c thiáº¿u thÃ´ng tin Ä‘á»‹nh danh." }, 401, ct); return; }
 
         if (req.Avatar == null || req.Avatar.Length == 0)
         {
-            await Send.ResponseAsync(new { message = "Cập nhật thông tin người dùng thất bại." }, 400, ct);
+            await Send.ResponseAsync(new { message = "Cáº­p nháº­t thÃ´ng tin ngÆ°á»i dÃ¹ng tháº¥t báº¡i." }, 400, ct);
             return;
         }
 
@@ -48,7 +48,7 @@ public class UpdateAvatarEndpoint : Endpoint<UpdateAvatarRequest>
         }
         catch (Exception ex)
         {
-            await Send.ResponseAsync(new { message = $"Lỗi server: {ex.Message}" }, 500, ct);
+            await Send.ResponseAsync(new { message = $"Lá»—i server: {ex.Message}" }, 500, ct);
         }
     }
 }

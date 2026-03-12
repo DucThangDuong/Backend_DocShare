@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.Documents.Queries;
+﻿using API.Extensions;
+using Application.Features.Documents.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.Documents;

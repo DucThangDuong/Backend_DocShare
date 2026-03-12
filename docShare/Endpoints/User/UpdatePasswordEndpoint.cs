@@ -1,6 +1,6 @@
-using API.DTOs;
+﻿using API.DTOs;
 using API.Extensions;
-using API.Features.User.Commands;
+using Application.Features.User.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -21,12 +21,12 @@ public class UpdatePasswordEndpoint : Endpoint<ReqUpdatePasswordDto>
     {
         if (string.IsNullOrEmpty(req.NewPassword))
         {
-            await Send.ResponseAsync(new { message = "Mật khẩu mới không được để trống." }, 400, ct);
+            await Send.ResponseAsync(new { message = "Máº­t kháº©u má»›i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }, 400, ct);
             return;
         }
 
         int userId = HttpContext.User.GetUserId();
-        if (userId == 0) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh ngÆ°á»i dÃ¹ng." }, 401, ct); return; }
 
         try
         {
@@ -39,7 +39,7 @@ public class UpdatePasswordEndpoint : Endpoint<ReqUpdatePasswordDto>
         }
         catch (Exception ex)
         {
-            await Send.ResponseAsync(new { message = "Lỗi server nội bộ." }, 500, ct);
+            await Send.ResponseAsync(new { message = "Lá»—i server ná»™i bá»™." }, 500, ct);
         }
     }
 }
