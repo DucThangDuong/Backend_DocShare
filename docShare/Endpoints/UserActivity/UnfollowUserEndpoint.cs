@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.UserActivity.Commands;
+﻿using API.Extensions;
+using Application.Features.UserActivity.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -24,7 +24,7 @@ public class UnfollowUserEndpoint : Endpoint<UnfollowUserRequest>
     public override async Task HandleAsync(UnfollowUserRequest req, CancellationToken ct)
     {
         int followerId = HttpContext.User.GetUserId();
-        if (followerId == 0) { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+        if (followerId == 0) { await Send.ResponseAsync(new { message = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh ngÆ°á»i dÃ¹ng." }, 401, ct); return; }
 
         try
         {
@@ -33,7 +33,7 @@ public class UnfollowUserEndpoint : Endpoint<UnfollowUserRequest>
             if (!result.IsSuccess)
                 await Send.ResponseAsync(new { message = result.Error }, result.StatusCode, ct);
             else
-                await Send.ResponseAsync(new { message = "Đã bỏ theo dõi người dùng." }, 200, ct);
+                await Send.ResponseAsync(new { message = "ÄÃ£ bá» theo dÃµi ngÆ°á»i dÃ¹ng." }, 200, ct);
         }
         catch (Exception ex)
         {

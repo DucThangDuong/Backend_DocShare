@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.Documents.Queries;
+﻿using API.Extensions;
+using Application.Features.Documents.Queries;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -20,7 +20,7 @@ public class GetUserDocStatsEndpoint : EndpointWithoutRequest
     {
         int userId = HttpContext.User.GetUserId();
         if (userId == 0)
-        { await Send.ResponseAsync(new { message = "Không xác định được danh tính người dùng." }, 401, ct); return; }
+        { await Send.ResponseAsync(new { message = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh ngÆ°á»i dÃ¹ng." }, 401, ct); return; }
 
         var result = await Handler.HandleAsync(new GetUserDocStatsQuery(userId), ct);
         await Send.ResponseAsync(result.Data, 200, ct);

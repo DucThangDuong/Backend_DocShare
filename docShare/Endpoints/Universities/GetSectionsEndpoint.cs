@@ -1,4 +1,4 @@
-using API.Features.Universities.Queries;
+﻿using Application.Features.Universities.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.Universities;

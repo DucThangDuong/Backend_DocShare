@@ -1,5 +1,5 @@
 ﻿using API.DTOs;
-using API.Features.User.Commands;
+using Application.Features.User.Commands;
 using FastEndpoints;
 
 namespace API.Endpoints.Auth

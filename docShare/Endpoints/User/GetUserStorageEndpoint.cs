@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.User.Queries;
+﻿using API.Extensions;
+using Application.Features.User.Queries;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -19,7 +19,7 @@ public class GetUserStorageEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         int userId = HttpContext.User.GetUserId();
-        if (userId == 0) { await Send.ResponseAsync(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "Token khÃ´ng há»£p lá»‡ hoáº·c thiáº¿u thÃ´ng tin Ä‘á»‹nh danh." }, 401, ct); return; }
 
         var result = await Handler.HandleAsync(new GetUserStorageQuery(userId), ct);
 

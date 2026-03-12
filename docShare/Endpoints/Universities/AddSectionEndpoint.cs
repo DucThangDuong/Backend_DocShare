@@ -1,4 +1,4 @@
-using API.Features.Universities.Commands;
+﻿using Application.Features.Universities.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -12,7 +12,7 @@ public class AddSectionRequest
 
 public class AddSectionEndpoint : Endpoint<AddSectionRequest>
 {
-    public API.Features.Universities.Commands.AddSectionHandler Handler { get; set; } = null!;
+    public AddSectionHandler Handler { get; set; } = null!;
 
     public override void Configure()
     {

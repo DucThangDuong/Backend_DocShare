@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.User.Queries;
+﻿using API.Extensions;
+using Application.Features.User.Queries;
 using FastEndpoints;
 
 namespace API.Endpoints.User;
@@ -23,7 +23,7 @@ public class GetPublicProfileEndpoint : Endpoint<GetPublicProfileRequest>
     public override async Task HandleAsync(GetPublicProfileRequest req, CancellationToken ct)
     {
         int currentId = HttpContext.User.GetUserId();
-        if (req.UserId <= 0) { await Send.ResponseAsync(new { message = "ID người dùng không hợp lệ." }, 400, ct); return; }
+        if (req.UserId <= 0) { await Send.ResponseAsync(new { message = "ID ngÆ°á»i dÃ¹ng khÃ´ng há»£p lá»‡." }, 400, ct); return; }
 
         var result = await Handler.HandleAsync(new GetPublicProfileQuery(req.UserId, currentId), ct);
 

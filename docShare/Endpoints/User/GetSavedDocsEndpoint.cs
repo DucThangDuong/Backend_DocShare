@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.User.Queries;
+﻿using API.Extensions;
+using Application.Features.User.Queries;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -19,7 +19,7 @@ public class GetSavedDocsEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         int currentId = HttpContext.User.GetUserId();
-        if (currentId <= 0) { await Send.ResponseAsync(new { message = "ID người dùng không hợp lệ." }, 400, ct); return; }
+        if (currentId <= 0) { await Send.ResponseAsync(new { message = "ID ngÆ°á»i dÃ¹ng khÃ´ng há»£p lá»‡." }, 400, ct); return; }
 
         var result = await Handler.HandleAsync(new GetSavedDocsQuery(currentId), ct);
         await Send.ResponseAsync(result.Data!, 200, ct);

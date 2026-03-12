@@ -1,5 +1,5 @@
-using API.Extensions;
-using API.Features.Documents.Commands;
+﻿using API.Extensions;
+using Application.Features.Documents.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 

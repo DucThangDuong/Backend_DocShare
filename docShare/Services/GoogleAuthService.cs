@@ -1,4 +1,4 @@
-using Application.DTOs;
+Ôªøusing Application.DTOs;
 using Application.Interfaces;
 using Application.IServices;
 using Domain.Entities;
@@ -11,9 +11,9 @@ namespace API.Services
         private readonly IConfiguration _configuration;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IUnitOfWork _repo;
-        private readonly RabbitMQService _rabbitMQ;
+        private readonly IRabbitMQService _rabbitMQ;
 
-        public GoogleAuthService(IConfiguration configuration, IJwtTokenService jwtTokenService, IUnitOfWork repo, RabbitMQService rabbitMQ)
+        public GoogleAuthService(IConfiguration configuration, IJwtTokenService jwtTokenService, IUnitOfWork repo, IRabbitMQService rabbitMQ)
         {
             _configuration = configuration;
             _jwtTokenService = jwtTokenService;
@@ -36,7 +36,7 @@ namespace API.Services
             }
             catch (InvalidJwtException)
             {
-                return new AuthResultDTO { IsSuccess = false, ErrorMessage = "Token Google khÙng h?p l? ho?c d„ h?t h?n." };
+                return new AuthResultDTO { IsSuccess = false, ErrorMessage = "Token Google kh√¥ng h?p l? ho?c d√£ h?t h?n." };
             }
             try
             {
@@ -88,9 +88,9 @@ namespace API.Services
                 await _rabbitMQ.SendEmailResquest(new SendMailRequestDto
                 {
                     Email = email,
-                    Subject = "–ang nh?p th‡nh cÙng v‡o DocShare",
-                    HtmlMessage = $"Xin ch‡o {name},\n\nB?n d„ dang nh?p th‡nh cÙng v‡o DocShare b?ng t‡i kho?n Google c?a mÏnh. " +
-                    $"N?u b?n khÙng ph?i l‡ ngu?i d„ th?c hi?n dang nh?p n‡y, vui lÚng liÍn h? v?i ch˙ng tÙi ngay l?p t?c.\n\nTr‚n tr?ng,\n–?i ngu DocShare"
+                    Subject = "√êang nh?p th√†nh c√¥ng v√†o DocShare",
+                    HtmlMessage = $"Xin ch√†o {name},\n\nB?n d√£ dang nh?p th√†nh c√¥ng v√†o DocShare b?ng t√†i kho?n Google c?a m√¨nh. " +
+                    $"N?u b?n kh√¥ng ph?i l√† ngu?i d√£ th?c hi?n dang nh?p n√†y, vui l√≤ng li√™n h? v?i ch√∫ng t√¥i ngay l?p t?c.\n\nTr√¢n tr?ng,\n√ê?i ngu DocShare"
                 });
                 return new AuthResultDTO
                 {
@@ -101,7 +101,7 @@ namespace API.Services
             }
             catch (Exception ex)
             {
-                return new AuthResultDTO { IsSuccess = false, ErrorMessage = $"–„ x?y ra l?i trong qu· trÏnh x? l˝ dang nh?p Google: {ex.Message}" };
+                return new AuthResultDTO { IsSuccess = false, ErrorMessage = $"√ê√£ x?y ra l?i trong qu√° tr√¨nh x? l√Ω dang nh?p Google: {ex.Message}" };
             }
         }
     }

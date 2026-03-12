@@ -1,5 +1,5 @@
 ﻿using API.DTOs;
-using API.Features.User.Queries;
+using Application.Features.User.Queries;
 using Application.Common;
 using FastEndpoints;
 

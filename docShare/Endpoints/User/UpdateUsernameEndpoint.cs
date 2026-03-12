@@ -1,6 +1,6 @@
-using API.DTOs;
+﻿using API.DTOs;
 using API.Extensions;
-using API.Features.User.Commands;
+using Application.Features.User.Commands;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -21,12 +21,12 @@ public class UpdateUsernameEndpoint : Endpoint<ReqUpdateUserNameDto>
     {
         if (string.IsNullOrEmpty(req.Username))
         {
-            await Send.ResponseAsync(new { message = "Dữ liệu không hợp lệ." }, 400, ct);
+            await Send.ResponseAsync(new { message = "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡." }, 400, ct);
             return;
         }
 
         int userId = HttpContext.User.GetUserId();
-        if (userId == 0) { await Send.ResponseAsync(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." }, 401, ct); return; }
+        if (userId == 0) { await Send.ResponseAsync(new { message = "Token khÃ´ng há»£p lá»‡ hoáº·c thiáº¿u thÃ´ng tin Ä‘á»‹nh danh." }, 401, ct); return; }
 
         try
         {
@@ -39,7 +39,7 @@ public class UpdateUsernameEndpoint : Endpoint<ReqUpdateUserNameDto>
         }
         catch (Exception ex)
         {
-            await Send.ResponseAsync(new { message = $"Lỗi server: {ex.Message}" }, 500, ct);
+            await Send.ResponseAsync(new { message = $"Lá»—i server: {ex.Message}" }, 500, ct);
         }
     }
 }
